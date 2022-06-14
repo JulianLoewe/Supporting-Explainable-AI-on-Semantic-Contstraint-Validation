@@ -1,0 +1,34 @@
+\documentclass[../../../thesis]{subfiles}
+\begin{document}
+Machine learning aims at providing algorithms that enable computers to learn from data. A good definition of learning in this context is given by Mitchell \cite{mitchell1997machine}, who states that learning from experience E with respect to some class of tasks T and performance measure P is to perform better at T (as measured by P) with more experience E.
+As this definition of learning lies in the heart of machine learning, the short introduction is structured based on it.
+Usually, machine learning is applied for tasks where the direct design of an algorithm is too difficult or where it is not even known how the task can be solved. In analogy to a functional algorithm, which gets an input and produces an output, a machine learning algorithm produces a machine learning model, which can then transform an input into an output. Therefore, a task is to transform an input into an output according to a specific eventually unknown schema $ot(.)$. \cite{bengio2017deep}
+
+\begin{Def}{Task}{ml_task}
+A task is described in terms of what a machine learning model will get as input and which type of output the user is interested in. Therefore, it is a tuple $(\mathbb{I}, \mathbb{T}, ot(.))$, where $\mathbb{I}$ denotes the type of the input, $\mathbb{T}$ denotes the type of the output, and $ot: \mathbb{I} \to \mathbb{T}$ the schema (represented as a function) to be learned by the machine learning model. $ot(.)$ is usually referred to as objective truth or the function which returns the optimal prediction.
+\end{Def}
+
+As there is an endless number of algorithms, there is also a variety of task types, restricting or making specific assumptions about the input and the output of the task. Two common tasks in machine learning are classification and regression. Classification restricts the output type to be categorical. Hence, the output is a set of labels, and the goal is to assign an input a label. Therefore, an example for such a task would be $(\mathbb{R}^n, \{\text{Setosa},\text{Versicolour},\text{Virginica}\},ot(.))$, which refers to the classification performed on the basis of the popular iris dataset \cite{iris}. In that case, $ot(.)$ would be the function always estimating the correct iris given the sepal and petal, length, and width. Regression restricts the output to be continuous and is, therefore, a numerical value, e.g., $\mathbb{T} = \mathbb{R})$.
+
+A machine learning algorithm is then used to learn from a tuple of examples by estimating the parameters of a machine learning model.
+
+\begin{Def}{Machine Learning Model}{ml_basics_model}
+A machine learning model $M_\theta: \mathbb{I} \to \mathbb{T}$ is a function parameterized with learnable parameters $\theta$ solving a task $(\mathbb{I}, \mathbb{T}, ot(.))$, by mapping problem instances to targets.
+\end{Def}
+
+Roughly, there are two types of machine learning algorithms: the supervised ones and the unsupervised ones. The algorithm type is chosen depending on the available experience to solve the task. The unsupervised ones are only given a tuple of $N \in \mathbb{N}$ problem instances $D$ of the task $(\mathbb{I}, \mathbb{T}, ot(.))$ and, therefore, $D \in \mathbb{I}^N$. In contrast, the supervised algorithms have as experience $D$ the problem instances, but now annotated with the matching targets and, therefore, $D \in (\mathbb{I} \times \mathbb{T})^N$. $D$ here denotes a dataset and is a tuple, so an example can be identified by its position in the tuple. Therefore, a dataset is defined as follows:
+
+\begin{Def}{Dataset}{dataset}
+Given a task $(\mathbb{I}, \mathbb{T}, ot(.))$, a dataset $D$ is a tuple of samples. The dataset is defined depending on the type of the algorithm.
+If it is a supervised algorithm, $D = ((\mathbf{x}_i, t_i) \mid i \in [1,...,N])$ is a tuple of $N \in \mathbb{N}$ samples. Each sample consists of a problem instance $\mathbf{x}_i$ and a target $t_i \in \mathbb{T}$.
+If it is an unsupervised algorithm, $D = (\mathbf{x}_i \mid i \in [1,...,N])$ is a tuple of $N \in \mathbb{N}$ samples.
+In both cases, the problem instance is a feature vector $\mathbf{x}_i = (x_{i,1}, x_{i,2},...,x_{i,K})^T \in \mathbb{I}$ with $K \in \mathbb{N}$ features.
+\end{Def}
+
+The machine learning algorithm discussed above to produce a machine learning model $M_\theta$ given a dataset $D$ is called the inducer of the model. The inducer is defined below.
+
+\begin{Def}{Inducer}{ml_basics_inducer}
+Given a task $(\mathbb{I}, \mathbb{T}, ot(.))$, a machine learning algorithm is a function $\mathcal{I_\zeta}: (\mathbb{I} \times \mathbb{T})^N \mapsto \mathbb{F}_{\mathcal{I_\zeta}}$. $\mathcal{I_\zeta}$ is called inducer with hyperparameters $\zeta$ and the hypothesis space, $\mathbb{F}_{\mathcal{I_\zeta}} \subset \mathcal{P}(\mathbb{I} \times \mathbb{T})$ which is the space of functions, which the produced machine learning model can represent.
+\end{Def}
+Hyperparameters are the parameters used to configure the inducer. Typical examples of hyperparameters are the learning rate and the maximum depth of a decision tree.
+\end{document}

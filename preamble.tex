@@ -1,0 +1,153 @@
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage[T1]{fontenc}
+\usepackage[numbers,square]{natbib}
+\usepackage[a4paper, margin=1.2in]{geometry}
+\usepackage{pdfpages}
+%\usepackage{showframe}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usetikzlibrary{shapes,snakes,patterns, positioning}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{afterpage}
+\usepackage{tablefootnote}
+%\KOMAoption{DIV}{12} %instead of ,left=2cm,right=2cm,top=2cm,bottom=2.2cm etc
+%\addtokomafont{disposition}{\rmfamily} % serifes in headings
+
+\pagestyle{plain}
+%\addtokomafont{section}{\clearpage}
+
+%\addtolength{\footskip}{-1.5cm}
+
+%%Mathe - Imports
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{mathrsfs}
+\usepackage{mathtools}
+\usepackage{amsthm}
+\usepackage[theorems,many]{tcolorbox}
+\tcbuselibrary{breakable}
+\allowdisplaybreaks
+\usepackage[lightning]{stmaryrd}
+\usepackage{extarrows}
+
+\usepackage{lmodern}
+\usepackage[hidelinks]{hyperref}
+\usepackage{float}
+\usepackage{enumitem}
+
+\setlength{\parindent}{0pt}
+
+\newcommand{\uri}[1]{\texttt{#1}}
+
+\usepackage[nodayofweek]{datetime}
+
+%% Mathe - Formatierungszeugs
+\theoremstyle{definition}
+\newtcbtheorem[]{BspI}{Example}{%
+	before skip = 11pt,
+	colback=blue!5,
+	colframe=blue!35!black,
+	fonttitle=\bfseries,
+	breakable,
+	enhanced jigsaw,
+	lines before break=3
+	}{Bsp}
+
+\definecolor{block-gray}{gray}{0.95}
+
+\newtcbtheorem[]{DefI}{Definition}{%
+    colback=white,
+    colframe=white,
+    %grow to right by=-10mm,
+    %grow to left by=-10mm, 
+    boxrule=0pt,
+    boxsep=0pt,
+    breakable,
+    enhanced jigsaw,
+    borderline west={3pt}{0pt}{black},
+    %colbacktitle={block-gray},
+    coltitle={black},
+    fonttitle={\bfseries},
+    attach title to upper={\\},
+    lines before break=3
+    }{Def}
+
+\newtcbtheorem[]{SatzI}{Lemma}{%
+    colback=white,
+    colframe=white,
+    %grow to right by=-10mm,
+    %grow to left by=-10mm, 
+    boxrule=0pt,
+    boxsep=0pt,
+    breakable,
+    enhanced jigsaw,
+    borderline west={3pt}{0pt}{red},
+    %colbacktitle={block-gray},
+    coltitle={black},
+    fonttitle={\bfseries},
+    attach title to upper={\\},
+    lines before break=3
+    }{S}
+    
+\newenvironment{Bsp}[2]{\vspace{0.2cm}\begin{BspI}{#1}{#2}}{\end{BspI}\vspace{0.2cm}}
+\newenvironment{Satz}[2]{\vspace{0.2cm}\begin{SatzI}{#1}{#2}}{\end{SatzI}\vspace{0.2cm}}
+\newenvironment{Def}[2]{\vspace{0.2cm}\begin{DefI}{#1}{#2}}{\end{DefI}\vspace{0.2cm}}
+
+
+\setlist[description]{font=\normalfont\itshape\space}
+
+\usepackage{listings}
+\usepackage[scaled=0.7]{beramono}
+
+
+\renewcommand\thesection{\arabic{chapter}.\arabic{section}}
+\renewcommand\thesubsection{\arabic{chapter}.\arabic{section}.\arabic{subsection}}
+\renewcommand\thesubsubsection{\arabic{chapter}.\arabic{section}.\arabic{subsection}.\arabic{subsubsection}}
+
+% Outer Join Symbols
+\def\ojoin{\setbox0=\hbox{$\bowtie$}%
+  \rule[-.02ex]{.25em}{.4pt}\llap{\rule[\ht0]{.25em}{.4pt}}}
+\def\leftouterjoin{\mathbin{\ojoin\mkern-5.8mu\bowtie}}
+\def\rightouterjoin{\mathbin{\bowtie\mkern-5.8mu\ojoin}}
+\def\fullouterjoin{\mathbin{\ojoin\mkern-5.8mu\bowtie\mkern-5.8mu\ojoin}}
+\newenvironment{select}[1]{\sigma_{#1} \left(}{\right)}
+\newenvironment{project}[1]{\pi_{#1} \left(}{\right)}
+\newenvironment{aggregate}[2]{\Gamma_{#1~\#~#2} \left(}{\right)}
+\newcommand{\rel}[1]{\MakeUppercase{\text{#1}}}
+\newcommand{\join}[1]{\underset{\substack{#1}}{\bowtie}}
+\newcommand{\semijoin}[1]{\underset{\substack{#1}}{\ltimes}}
+\newcommand{\naturaljoin}{\bowtie}
+\newcommand{\antisemijoin}[1]{\underset{\substack{#1}}{~\overline{\ltimes}~}}
+
+
+\sloppy
+
+%% Pseudocode - Imports
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\floatname{function}{algorithm}
+\algnewcommand\algorithmicforeach{\textbf{for each}}
+\algdef{S}[FOR]{ForEach}[1]{\algorithmicforeach\ #1\ \algorithmicdo}
+\newenvironment{breakablealgorithm}
+  {% \begin{breakablealgorithm}
+   \begin{center}
+     \refstepcounter{algorithm}% New algorithm
+     \hrule height.8pt depth0pt \kern2pt% \@fs@pre for \@fs@ruled
+     \renewcommand{\caption}[2][\relax]{% Make a new \caption
+       {\raggedright\textbf{\fname@algorithm~\thealgorithm} ##2\par}%
+       \ifx\relax##1\relax % #1 is \relax
+         \addcontentsline{loa}{algorithm}{\protect\numberline{\thealgorithm}##2}%
+       \else % #1 is not \relax
+         \addcontentsline{loa}{algorithm}{\protect\numberline{\thealgorithm}##1}%
+       \fi
+       \kern2pt\hrule\kern2pt
+     }
+  }{% \end{breakablealgorithm}
+     \kern2pt\hrule\relax% \@fs@post for \@fs@ruled
+   \end{center}
+  }

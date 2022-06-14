@@ -1,0 +1,21 @@
+This section introduces a resource that utilizes specific aspects of this thesis and was produced as a collaborative project with four members of the Scientific Data Management Research Group. All authors contributed equally to the resulting resource paper. The resource is called InterpretME \cite{interpretME} and will show how parts of the concepts in this thesis can be applied.
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.9\textwidth]{images/interpretME_architecture.png}
+    \caption{The InterpretME Architecture \cite{interpretME}}
+    \label{fig:interpretMEarchitecture}
+\end{figure}
+
+InterpretME aims at making supervised machine learning models (e.g., decision trees as in this thesis) better interpretable by tracking the different stages used to produce the trained model in an automated way. That is, the concept of a machine learning pipeline is extended to collect metadata about the characteristics of the model and the data used to train the model. Figure \ref{fig:interpretMEarchitecture} shows the architecture of InterpretME proposed in the resource paper. In a first step, the user provides the inputs to InterpretME in the form of knowledge graphs, a sampling strategy, a set of integrity constraints and features' definitions. The features' definitions are SPARQL sub-queries, which are combined similar to the property path in section \ref{section_propositionalization} to a dataset generating query. The query is then used to retrieve the dataset and the sample-to-node mapping; allowing to apply the SHACL validation to samples in the dataset.  
+
+In comparison to the sequential process proposed in Figure \ref{fig:overall_approach} and the general idea of validating the trained machine learning model, InterpretME postpones the constraint validation step. The step is now called SHACL validation step as the integrity constraints mentioned are the data constraints from section \ref{section_further_types_of_constraints}. The training pipeline uses the constraint validation results as additional features. This allows the model to make use of the additional patterns encoded into the validation results and, therefore, in a way make use of the semantic context of the samples in the knowledge graph. Indeed, it turns out that the usage of the constraint validation results improves the performance of the model in terms of accuracy. 
+
+In the final step of the model training pipeline, the model is evaluated w.r.t. performance metrics (see section \ref{section_algorithms_performance_measures}); interpretability methods (e.g., LIME \cite{ribeiro2016should} and dtreeviz \cite{dtreeviz}) are applied and the approach from section \ref{section_constraint_based_explanations} is used. The latter one allows to spot patterns in the usage of the samples, annotated with the constraint validation results, by the model.
+
+The data collected (e.g., the inputs, the sample-to-node mapping, the model evaluation results, and the results of the interpretability methods) is composed into a new knowledge graph. In terms of this work, the new knowledge graph simplifies and facilitates the interpretation of the model predictions w.r.t. the original entity and the constraint validation results. This is achieved by exploiting the sample-to-node mapping to align the entities in the new knowledge graph to the entities in the input knowledge graphs through \uri{owl:sameAs} connections. For example, results of interpretability methods are usually only associated with the sample in the dataset, which makes it hard to understand the context of the sample under specific circumstances. However, the generated knowledge graph can be queried together with the input knowledge graphs in a federated manner to give the interpretability result for a specific sample together with its original semantic context and the matching constraint validation results. In this context, the constraint validation results can also be used as flags to mark certain entities of interest.
+
+Evaluating InterpretME shows that the interpretability of machine learning models can be increased by, among other things, applying the methods proposed in this work.
+
+
+

@@ -1,0 +1,62 @@
+
+    This section serves as a summary of chapter \ref{section_validating_constraints} by providing pseudocode of the validation engine (algorithm \ref{algo:validation_engine}), approaching the problem described in lemma \ref{S:problem_validating_constraints_over_ai_model}, and showing how one might get the inputs of the problem. 
+    The algorithm assumes an inducer $\mathcal{I}$, a knowledge graph $G \subset \mathbf{G}$, the components (i.e., the dataset generating query $Q_D$ and a target variable ?t) used to generate a dataset from $G$ as well as the constraints to be checked $\mathcal{C} \subset \mathbf{C}$.
+    These inputs are transformed into the input tuple of the problem described in lemma \ref{S:problem_validating_constraints_over_ai_model} and, afterward, the constraints are used to validate the so-created model, solving the problem described. Saying that, the user may skip the training of the machine learning model with the extracted dataset, by using an already trained model. However, this may lead to less useful visualizations based on the results of the engine, created in the coming sections. More details can be found as a final note in section \ref{section_tree_based_models}.
+    
+    The algorithm results in the model-validation-result function from definition \ref{Def:model_validation_result_function}. The algorithm is further improved in section \ref{section_improving_approach}.
+    The following example demonstrates the algorithm line by line using the examples already provided.
+    
+    \begin{Bsp}{Applying Algorithm \ref{algo:validation_engine} to the Motivating Example}{applying_the_validation_engine}
+        In a first step, the result of section \ref{section_propositionalization}, which is definition \ref{Def:transforming_tuple_to_dataset}, is used to transform the dataset generating query $Q_D$ and the variable $?t$ occurring in all solution mappings in $[[Q_D]]_G$ into the dataset $D$ and the sample-to-node mapping $\eta$ (line \ref{algo:validation_engine:dataset}). The dataset generating query is the one provided in example  \ref{Bsp:motivating_example_dataset_query}, which is then used in example \ref{Bsp:creating_the_motivating_example_dataset} to generate the dataset. By doing so, the sample-to-node mapping, as shown in example \ref{Bsp:sample-to-node_mapping_motivating_example}, is created on the fly. 
+        Afterwards, the learning algorithm $\mathcal{I}$ is used to train a machine learning model $M$ with parameters $\theta$ using the generated dataset $D$ (line \ref{algo:validation_engine:train_model}). Here, it is assumed that the decision tree in Figure \ref{motivating_example_decision_tree} is created, to solve the classification problem of "to get vaccinated or not to get vaccinated" given the dataset. Techniques to improve the quality of the model such as hyperparameter optimization, like finding the maximal depth of the decision tree as in example \ref{Bsp:sigmoid_estimation_example}, or further steps to prepare the dataset are omitted. The division of the data set into a training set and a test set is also left out, but should be done as described in section \ref{section_algorithms_performance_measures} to be able to measure the generalization capabilities of the model. 
+        
+        At this point, the input tuple $(\mathcal{C}, M_\theta, D, G, \eta)$ to the limited problem of validating constraints over machine learning models are ready. As a first step to solve the problem, a SHACL engine is needed to evaluate the shape schemas $C.S$ given by the constraints $C \in \mathcal{C}$ (lines \ref{algo:validation_engine:shaclEngineStart} - \ref{algo:validation_engine:shaclEngineEnd}). The process of performing the SHACL validation for each constraint returns a dictionary of entity validation functions (see definition \ref{Def:shacl_entity_validation}). Therefore, $\textit{validate}$ has one entry per distinct SHACL shape schema mentioned in the constraints (line \ref{algo:validation_engine:performShaclValidation}).
+        In this example, $G$ needs only be checked against one shape schema, as only the constraint from example \ref{Bsp:motivating_example_constraint_definition} is used.
+        
+        The validation results for the \uri{:PersonShape} are then used to evaluate the constraint for each sample (line \ref{algo:validation_engine:eachtaskexample}). Therefore, the formula \ref{F:constraint_eval_1} is used in lines \ref{algo:validation_engine:constraintLeftStart} - \ref{algo:validation_engine:constraintLeftEnd} and the formula \ref{F:constraint_eval_2} in line \ref{algo:validation_engine:constraintRight}. Given definition \ref{Def:semantics_constraint_implication}, these results are combined (lines \ref{algo:validation_engine:start_combine} - \ref{algo:validation_engine:end_combine}) to populate the result function $\Theta$. This procedure is already demonstrated in example \ref{Bsp:evaluating_example_constraint}.
+    \end{Bsp}
+    \afterpage{
+    \begin{algorithm}[H]
+    \caption{Pseudocode of the Validation Engine}\label{algo:validation_engine}
+    \begin{algorithmic}[1]
+    
+    \Function{main}{Inducer $\mathcal{I}$, Query $Q_D$, Knowledge Graph $G$, Target Variable $?t$, Constraints $\mathcal{C}$}
+        \State $(D, \eta) \gets \mathbb{f}(\text{tuple}([[Q_D]]_G), ?t)$ \label{algo:validation_engine:dataset}
+        \State $M_\theta \gets \mathcal{I}(D)$ \label{algo:validation_engine:train_model} \Comment{This is optional. A trained model $M_\theta$ might also be provided to the engine, instead of $\mathcal{I}$}
+        \State $\textit{validate} \gets \textbf{performShaclValidation}(\mathcal{C}, G)$ \label{algo:validation_engine:performShaclValidation}
+        \State \Return{$\mathbf{evaluateConstraints}(\mathcal{C},\textit{validate},\mathcal{M}_\theta,\eta,G)$} \label{algo:validation_engine:call_evaluateConstraints}
+    \EndFunction
+    \Function{performShaclValidation}{Constraints $\mathcal{C}$, Knowledge Graph $G$}
+        \State $\textit{validate} \gets \emptyset$
+        \ForEach{$C \in \mathcal{C}$} \label{algo:validation_engine:shaclEngineStart}
+            \If{$C.\mathcal{S} \not\in \textit{validate}$}
+                \State $\textit{validate}[C.\mathcal{S}] \gets \mathbf{runShaclEngine}(C.\mathcal{S},G)$\label{algo:validation_engine:shaclEngine}
+            \EndIf
+        \EndFor \label{algo:validation_engine:shaclEngineEnd}
+        \State \Return{$\textit{validate}$}
+    \EndFunction
+    \Function{evaluateConstraints}{Constraints $\mathcal{C}$, Entity Validation Function $\textit{validate}$, Model $\mathcal{M}_\theta$, Sample-to-node Mapping $\eta$, Knowledge Graph $G$}
+        \State $\mathcal{G}_{\Theta} \gets \emptyset$
+        \ForEach{$C \in \mathcal{C}$} \label{algo:validation_engine:start_eval}
+            \ForEach{$i \in \{1,...,\mathbf{length}(D)\}$} \label{algo:validation_engine:eachtaskexample}
+                \If{$(\eta(i),C.ts,G) \in \textit{dom}(\textit{validate}[\mathcal{C.S}])$} \label{algo:validation_engine:constraintLeftStart}
+                    \State $\textit{left} \gets \textit{validate}[\mathcal{C.S}](\eta(i),C.ts,G)$ \label{algo:validation_engine:constraintLeftValidate}
+                \Else
+                    \State $\textit{left} \gets \top$ \Comment{Case: $\eta(i) \not\in [[\uri{TARG}(ts)]]_G$} \label{algo:validation_engine:constraintLeftValidateDefault}
+                \EndIf \label{algo:validation_engine:constraintLeftEnd}
+                
+                \State $\textit{right} \gets [[C.\phi_{T}]]_{M_\theta(D[i])}$\label{algo:validation_engine:constraintRight}
+                \If{$\textit{left} \land \textit{right}$} \label{algo:validation_engine:start_combine}
+                    \State $\mathcal{G}_{\Theta} \gets \mathcal{G}_{\Theta} \cup \{(C,i) \mapsto 1\}$
+                \ElsIf{$\textit{left} \land \neg \textit{right}$}
+                    \State $\mathcal{G}_{\Theta} \gets \mathcal{G}_{\Theta} \cup \{(C,i) \mapsto 0\}$
+                \Else
+                    \State $\mathcal{G}_{\Theta} \gets \mathcal{G}_{\Theta} \cup \{(C,i) \mapsto -1\}$
+                \EndIf \label{algo:validation_engine:end_combine}
+            \EndFor
+        \EndFor \label{algo:validation_engine:end_eval}
+        \State \Return{$\mathcal{G}_{\Theta}$}
+    \EndFunction
+     \end{algorithmic}
+     \end{algorithm}
+}

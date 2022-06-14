@@ -1,0 +1,70 @@
+% \newpage
+% Let the structure of a trained decision tree $T$ be defined by
+% \begin{gather}
+%     \textrm{leftchild}_T:[1,...,|T|] \to [1,...,|T|]\\
+%     \textrm{rightchild}_T:[1,...,|T|] \to [1,...,|T|]\\
+%     \textrm{parent}_T:[2,...,|T|] \to [1,...,|T|]\\
+%     \textrm{feature}_T:[1,...,|T|] \to [1,...,K]\\
+%     \textrm{op}_T:[1,...,|T|] \to \{\leq, >\}\\
+%     \theta_T:[1,...,|T|] \to \mathbb{R}\\
+% \end{gather}
+% where $|T|$ denotes the number of decision tree nodes in $T$ and $K$ the number of features in the dataset.
+
+% \begin{Def}{Recursive Node Data Operator}{}
+% Given the decision tree description functions
+% \begin{gather}
+%     \uri{node\_samples}(i) \mapsto \begin{cases} 
+%                                     \uri{Dataset}     & i = 1\\
+%                                     \begin{select}{\textrm{feature}_T(\textrm{parent}_T(i)) ~ \textrm{op}_T(i) ~ \theta_T(\textrm{parent}_T(i))}
+%                                         \uri{node\_samples}(\textrm{parent}_T(i))
+%                                     \end{select} & \textrm{else}
+%                              \end{cases}\\            
+% \end{gather}
+% \end{Def}
+
+    
+% \[\uri{left\_samples}(\uri{R},i) \mapsto \begin{select}{\textrm{feature}_T(i) ~ \leq ~ \theta_T(i)}
+%                                         \uri{R}
+%                                     \end{select}\]
+% \[\uri{right\_samples}(\uri{R},i) \mapsto \begin{select}{\textrm{feature}_T(i) ~ > ~ \theta_T(i)}
+%                                         \uri{R}
+%                                     \end{select}\]
+
+% \[\uri{R}(\textrm{\underline{idx}}, x_1, ..., x_K, y, v_{c_1},...,v_{c_M})\]
+
+% \[f_{g,v}^{c_i,\uri{R}} = \begin{project}{\textrm{idx}}
+%     \begin{select}{\textrm{idx} \in \Gamma(g,\uri{R}) \land v_{c_i} = v}
+%         \uri{R}
+%     \end{select}
+% \end{project}\]
+
+
+
+% %\{ i | i \in (D_{idx} \cap \Gamma(g)) \land \Theta(C,i) = v\}\]
+
+% \begin{gather}
+%     \begin{aggregate}{group, validation\_result}{group, validation\_result, count(*)}
+%         \begin{project}{\textrm{idx}, \gamma(\textrm{idx}) ~ \textrm{"group"}, ~ \textrm{validation\_result}}
+%             R \join{} 
+%             \begin{select}{\textrm{constraint\_id} = j}
+%                 \uri{valRes}
+%             \end{select}
+%         \end{project}
+%     \end{aggregate}
+% \end{gather}
+
+
+% \begin{align*}
+%     S = ~ & \{\uri{:PersonShape}, \uri{:NotVaccinatedPersonShape}\}\\
+%     \uri{DEF}(\uri{:PersonShape}) = ~ & (\geq_1 \uri{:pregnant.True}) ~\land~ (\geq_1 \uri{:country.Germany})~ \land\\ 
+%                                       & (\geq_{21} \uri{:contact\_with.:NotVaccinatedPersonShape})\\
+%     \uri{DEF}(\uri{:NotVaccinatedPersonShape}) = ~ & (\geq_1 \uri{:vaccinated.False})
+% \end{align*}
+    
+%     \lstset{language=html}
+%     \begin{lstlisting}[captionpos=b, caption=\uri{TARG}(\uri{:PersonShape}) and \uri{TARG}(\uri{:NotVaccinatedPersonShape}), basicstyle=\ttfamily, frame=single]
+%     PREFIX : <http://example.org/>
+%     SELECT ?x WHERE {
+%         ?x a :Person
+%     }
+%     \end{lstlisting}

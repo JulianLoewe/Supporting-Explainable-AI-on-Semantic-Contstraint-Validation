@@ -1,0 +1,44 @@
+In definition \ref{Def:constraint} a constraint is defined to be of a specific form, which makes use of a SHACL shape schema associated with a target shape as a condition and a logical expression about the predicted target as a restriction. This kind of constraint can be used during inference to explain and check the model's predictions. When the condition of the constraint applies to the problem instance and its semantic context in the knowledge graph, the validation result grades the prediction made by the model to be correct or incorrect according to the constraint. If the validation result confirms the model's prediction, the constraint gives an explanation for the prediction. If the prediction turns out to be incorrect, the result might be used to identify the reason for that. However, in both cases, the explanation or the reasoning is only necessarily true if the underlying knowledge graph is correct. Given the application, this kind of constraint is now referred to as \emph{prediction constraint}. 
+
+\begin{Def}{Prediction Constraint}{prediction_constraint}
+The type of constraint as defined in definition \ref{Def:constraint}, which, when evaluated over a machine learning model given the underlying knowledge graph and the sample-to-node mapping, makes a statement about the correctness of the predictions of the model, by assuming a correct data basis is called prediction constraint. 
+\end{Def}
+
+This is in contrast to a constraint, which does not take into consideration the predictions of the model. As no statement is made about the truth of the model's predictions, the constraint validation results are only about the integrity of the semantic data in the knowledge graph. It is the samples in the dataset, which are now validated or invalidated with respect to the semantic context given in the knowledge graph. Therefore, each constraint validation result measures the trustworthiness of the sample in the dataset.
+
+Clearly, there are different possibilities to represent such a constraint. In some cases, it might be enough to mark the $i$th sample as valid/invalid if the associated node $\eta(i)$ is retrieved by a SPARQL query and else as invalid/valid. However, using a SHACL shape schema $\mathcal{S} = (S,\uri{TARG}, \uri{DEF})$ to represent constraints over a knowledge graph is the W3C recommended approach and is at least as expressive as a SPARQL query (see below). The definition is done analog to a prediction constraint, but only uses the condition part of the implication.
+
+\begin{Def}{Data Constraint}{data_constraint}
+A constraint $C \in \mathbf{C}$ is called a data constraint if the constraint only measures the trustworthiness of the samples in the dataset, by looking at their feature values and their semantic context given in the knowledge graph.
+
+Here every data constraint $C$ is composed of a shape schema $\mathcal{S} = (S, \uri{TARG}, \uri{DEF})$ ($\mathcal{S} \in \mathbf{SN}$) and a target shape $ts \in S$. The constraint is serialized as follows:
+\[\mathcal{S}\big|_{ts}\] 
+The components of $C$ can be accessed with $C.\mathcal{S}$ and $C.ts$.
+\end{Def}
+
+To stay with the 3-valued logic and the notation known from the prediction constraints, a data constraint $C$ is evaluated with respect to a knowledge graph $G$ and the node $\eta(i)$, that uses the sample-to-node mapping $\eta$ applied to the $i$'th sample in a dataset, using the Scott-brackets:
+
+\begin{gather}
+    [[C_d]]_{G,\eta(i)} = \begin{cases} \text{validate}(\eta(i),ts,G) & \eta(i) \in [[\uri{TARG}(ts)]]_G\\ -1 & \text{else}
+    \label{F:constraint_data} \end{cases}
+\end{gather}
+
+Using the 3-values logic comes with the benefits of more detailed validation results. Precisely, a data constraint only applies to a seed node and the associated sample, when the seed node is included in the target definition of the specified target shape of the constraint. If a data constraint labels a sample as valid or invalid, that is because the shape applies or does not apply to the related seed node.
+
+For example, a data constraint $C_{Q}$ can be used to mark the instances retrieved by a query $Q$ as 'valid' ($1$) and the rest as 'not applicable' $-1$, by setting $C_{Q}.\mathcal{S} = (\{s_1\}, \{s_1 \mapsto Q\},\{\})$.
+The example shows that using SHACL for data constraints is at most as expressive as a constraint, which would only be based on a SPARQL query.
+
+Again, the 3-valued logic can be transformed into the 2-valued logic by taking the absolute value. However, the transformation may lead to misleading results as it might be the case that every sample seems to be valid, although, in fact, not a single sample was validated.
+
+Further, the transformation shows the similarity of the left-hand side $\mathcal{S}\big|_{ts}$ of a prediction constraint defined in definition \ref{Def:constraint} with a \emph{data constraint} C: 
+\begin{gather}
+    \left|[[C]]_{G,\eta(i)}\right| = [[\mathcal{S}\big|_{ts}]]_{G,\eta(i)} \label{data_prediction_shape_evaluation_comp}
+\end{gather}
+
+Although the validation results of a data constraint only make a statement about the validity of the samples in the dataset and not the predictions of the model, for notation convenience both will be saved by the validation engine in the model-validation-result function $\Theta$ as defined in definition \ref{Def:model_validation_result_function}.
+
+Adopting the $\textbf{evaluateConstraints}$ function in algorithm \ref{algo:validation_engine} to different types of constraints is a matter of differentiating between the types. When evaluating a data constraint line \ref{algo:validation_engine:constraintLeftValidateDefault} needs to assign $-1$ and lines \ref{algo:validation_engine:constraintRight} - \ref{algo:validation_engine:end_combine} can be replaced with \[\mathcal{G}_\Theta \gets \mathcal{G}_\Theta \cup \{(C,i) \mapsto \textit{left}\}\] This change does not change the complexity of the validation engine as evaluating the right-hand side of the prediction constraint in combining the results was assumed to take constant time.
+
+% TODO: Converting a prediction constraint into a data constraint by using the ground truth values.
+
+% TODO: Example: e.g. only females can be pregnant -> male persons can not be pregnant

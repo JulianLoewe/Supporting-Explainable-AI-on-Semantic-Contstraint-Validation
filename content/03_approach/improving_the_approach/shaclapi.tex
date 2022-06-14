@@ -1,0 +1,140 @@
+An inspection of the validation engine given in algorithm \ref{algo:validation_engine} shows that the information needed by the validation engine with respect to the SHACL validation results is communicated too broad to the SHACL engine. In the context of evaluating constraints over a machine learning model, the calls to the entity validation function in line \ref{algo:validation_engine:constraintLeftValidate} specify the need of the algorithm for SHACL validation results.
+
+\begin{figure}
+    \centering
+        \begin{tikzpicture}[thick,
+            set/.style = {circle,
+                minimum size = 3cm}]
+         
+        % Set A
+        \node[set,label={135:$[[\uri{TARG}(C.ts)]]_G$}] (A) at (0,0) {};
+         
+        % Set B
+        \node[set,label={45:$[[Q_s]]_G$}] (B) at (1.0,0) {};
+        
+        % Set C
+        \node[set, label={270:$\{\eta(i) \mid [[C.\phi_t]]_{M_\theta}(\mathbf{x}_i) = \bot\}$}] (C) at (1.8,-0.8) {};
+        
+        \fill[fill=red](0,0) circle(1.5cm);
+        
+        \fill[fill=blue](1.0,0) circle(1.5cm);
+         
+        % Intersection
+        \begin{scope}
+            \clip (0,0) circle(1.5cm);
+            \clip (1.0,0) circle(1.5cm);
+            \fill[fill=green](0,0) circle(1.5cm);
+        \end{scope}
+        
+        \begin{scope}
+            \clip (0,0) circle(1.5cm);
+            \clip (1.0,0) circle(1.5cm);
+            \clip (1.8,-0.8) circle(1.5cm);
+            \fill[pattern=north west lines](0,0) circle(1.5cm);
+        \end{scope}
+         
+        % Circles outline
+        \draw (0,0) circle(1.5cm);
+        \draw (1.0,0) circle(1.5cm);
+        \draw[dotted] (1.8,-0.8) circle(1.5cm);
+         
+        % Set intersection label
+        % \node at (0.5,0) {$B$};
+        % \node at (-1.0,0) {$A$};
+        % \node at (2.0,0) {$C$};
+         
+        \end{tikzpicture}
+        \caption{Venn-Diagram visualizing the Different Kinds of Nodes Occurring during the Validation}   \label{fig:venn_diagram_showing_instances_to_reduce_during_shacl_validation}
+\end{figure}
+
+
+
+The entity validation function is called for every combination of a constraint $C$ and a node $\eta(i)$ related to a sample in the dataset. That is, the evaluation only requires the validation results for the nodes retrieved, when executing the seed query $Q_s$, used during creation of the dataset, over $G$ (in Figure \ref{fig:venn_diagram_showing_instances_to_reduce_during_shacl_validation} the right circle). Additionally, the algorithm only makes use of the entity validation function if the entity validation function contains the needed validation result. For a given constraint $C$ with a target shape, $C.ts$ this is only the case if the node is included in the target definition of the shape (left circle in Figure \ref{fig:venn_diagram_showing_instances_to_reduce_during_shacl_validation}). Finally, one can exploit the form of the constraint $C$ in the case of the 2-valued logic. Taking definition \ref{Def:constraint} and lemma \ref{S:3valueto2valuelogic} brings $C$ in the form \[\mathcal{S}\big|_{ts} \rightarrow \phi_{T}\] 
+Because of the Boolean implication now used in $C$, if $[[C.\phi_t]]_{M_\theta}(\mathbf{x}_i)$ evaluates to true the whole constraint will also evaluate to true independent of the SHACL schema validation result generated for the evaluation of the left-hand side of the constraint (dotted circle in Figure \ref{fig:venn_diagram_showing_instances_to_reduce_during_shacl_validation}). 
+
+As the entity validation function is created from a valid assignment, at most the validation results for the target nodes of the shapes in the shape schema are included, which are too many. This can be seen in Figure \ref{fig:venn_diagram_showing_instances_to_reduce_during_shacl_validation}. The area in blue represents the set of nodes originally not included in the target definition of the target shape. The red area, as well as the not dotted green area (in the case of the 2-valued logic), represent the nodes validated by the SHACL engine, although, the results are not needed by the validation engine to validate the constraints.
+
+\begin{Satz}{Only Perform the SHACL Validation for Target Nodes Needed by the Validation Engine}{removeTargets}
+    Given a constraint $C \in \mathbf{C}$ (as in definition \ref{Def:constraint}), a shape schema $\mathcal{S} = (S,\uri{TARG},\uri{DEF})$, a seed query $Q_s \in \mathbf{Q_T}$ used to retrieve the dataset $D$ and the sample-to-node mapping $\eta$ with problem instances $\mathbf{x}_i$ from a knowledge graph $G \in \mathbf{G}$,  the nodes needed to be validated by a SHACL engine to perform the constraint validation of $C$ can be limited to
+    \begin{gather}
+        H_2 = [[\uri{TARG}(C.ts)]]_G \cap [[Q_s]]_G \cap \{\eta(i) \mid [[C.\phi_t]]_{M_\theta(\mathbf{x}_i)} = \bot\} \label{2valuedlogicintersection}
+    \end{gather}
+    in case of the 2-valued logic (the dotted area marked in green in Figure \ref{fig:venn_diagram_showing_instances_to_reduce_during_shacl_validation}) or 
+    \begin{gather}
+    H_3 = [[\uri{TARG}(C.ts)]]_G \cap [[Q_s]]_G \label{3valuedlogicintersection}
+    \end{gather} 
+    in case of the 3-valued logic (the area marked in green in Figure \ref{fig:venn_diagram_showing_instances_to_reduce_during_shacl_validation}).     
+\end{Satz}
+
+Therefore, the goal is now to reduce the SHACL schema $C.\mathcal{S} = (S,\uri{TARG}, \uri{DEF})$ to a SHACL schema $\mathcal{S}' = (S',\uri{TARG'}, \uri{DEF})$, in such a way, that the validation results for the instances in $H_3$ resp. $H_2$ does not change. This can be formally expressed with
+\begin{gather}
+\forall G \in \mathbf{G} ~ \forall v \in H ~ \textit{validate}_\mathcal{S}(v,C.ts,G) = \textit{validate}_{\mathcal{S}'}(v,C.ts,G) \label{consistency_shape_shema}
+\end{gather}
+where $\textit{validate}_\mathcal{S}$ is the entity validation function for $\mathcal{S}$ and $H$ is $H_2$ or, $H_3$ depending on the logic used.
+
+To remove the kind of instances validated unnecessarily by the SHACL engine, the target definition of the target shape $C.ts$ can be limited to the intersection $H$. Therefore, the seed query $Q_s$ is extracted from the dataset generating query $Q_D$ by only projecting $?x$:
+\begin{gather}
+    Q_s = \uri{SELECT}(?x,id, Q_D) \label{seed_query_from_dataset_generating_query}
+\end{gather}
+Next, in case of the 2-valued logic the nodes in the set $\{\eta(i) \mid [[C.\phi_t]]_{M_\theta}(\mathbf{x}_i) = \bot\}$ can be estimated by early evaluating the right-hand side of the constraint and making use of the sample-to-node mapping $\eta$. Given the IRIs of the nodes, a filter condition $R$ can be built to restrict the validation to these nodes. In the case of the 3-valued logic, it holds $R = \top$.
+
+Both $Q_s$ and $R$ can now be used in the target definition of the target shape $C.ts$ of the reduced shape schema:
+\[
+    \uri{TARG'}(s) =    \begin{cases} 
+                            \uri{TARG}(s) & s \neq C.ts\\
+    \uri{SELECT}(?x,id,((Q_s \uri{ AND } \uri{TARG}(C.ts)) \uri{ FILTER } R)) & \text{else}
+                        \end{cases}
+\]
+Clearly, the change of \uri{TARG}(C.ts) does not affect formula \ref{consistency_shape_shema}.
+
+The execution of the SHACL engine over a shape schema, as performed in line \ref{algo:validation_engine:shaclEngine}, produces \emph{at most} the validation results for the target nodes of the shapes in the shape schema. However, the evaluation of a constraint only needs the SHACL validation results for the shape $C.ts$ and further results should only be produced because of inter-shape constraints.
+
+This is the second kind of instances validated unnecessarily by the SHACL engine. These shapes can be identified by taking the shape schema $\mathcal{S}$ as a directed graph, as defined below:
+
+\begin{Def}{Dependency Graph of a Shape Schema \cite{figuera2021trav}}{}
+    Given a shape schema, $\mathcal{S} = (S,\uri{TARG},\uri{DEF})$ the directed dependency graph $\Phi_\mathcal{S}$ is a tuple $(V_{\Phi_\mathcal{S}}, E_{\Phi_\mathcal{S}})$ with \[V_{\Phi_\mathcal{S}} = S\] and \[E_{\Phi_\mathcal{S}} = \{(s_i, s_j) \mid s_j \textrm{ appears in } \uri{DEF}(s_i)\}\]
+\end{Def}
+
+Given, $\Phi_\mathcal{S}$ one can identify the needed shapes $S'$ to be the ones reachable from $C.ts$. This is valid as the criterion $\uri{DEF}(C.ts)$ can still be evaluated as before because formula \ref{consistency_shape_shema} stays unaffected.
+
+\begin{Satz}{Remove unneeded Shapes from the Shape Schema}{removeShapes}
+    Given a constraint $C \in \mathbf{C}$ (as in definition \ref{Def:constraint}) and a shape schema, $\mathcal{S} = (S,\uri{TARG},\uri{DEF})$ the shapes to evaluate $C$ can be limited to the shapes, which are reachable from $C.ts$ in the directed dependency graph $\Phi_\mathcal{S}$.
+\end{Satz}
+
+Algorithm \ref{algo:reduced_shacl_validation} makes use of the two lemmas and is a replacement for $\mathbf{performShaclValidation}$ (line \ref{algo:validation_engine:performShaclValidation} in algorithm \ref{algo:validation_engine}). Additionally, the algorithm takes care of shape schemas used by multiple constraints. Taking multiple constraints into consideration is important as each shape schema should only be validated once over the knowledge graph, to avoid the redundant generation of SHACL schema validation results for shapes occurring in multiple reduced shape schemas. 
+\begin{Satz}{Simultaneous Generation of SHACL Schema Validation Results for Constraints using the Same Shape Schema}{simulataneous_constraint_validation}
+Given a set of constraints $\mathcal{C} \subset \mathbf{C}$ the SHACL schema validation results for all $\mathcal{C}_\mathcal{S} \in \mathcal{P}(\mathcal{C})$ for which all $C_i, C_j \in \mathcal{C}_\mathcal{S}$ imply $C_i.\mathcal{S} = C_j.\mathcal{S}$ should be generated simultaneously. 
+\end{Satz}
+
+However, lemmas \ref{S:removeTargets} and \ref{S:removeShapes} can both be extended easily to multiple constraints.
+A group of constraints using the same shape schema $\mathcal{S}$, but different target shapes $ts_i$ ($i \in [1,2,...]$), needs for evaluation all shapes reachable from the $ts_i$ (lines \ref{algo:reduced_shacl_validation:reachableShapesStart} - \ref{algo:reduced_shacl_validation:reachableShapesEnd}). These are stored in \textit{relevantShapes}. In the next steps, for each shape schema occurring in the constraints (line \ref{algo:reduced_shacl_validation:EachShapeSchema}), a subset of the target shapes must be selected for which the target definition can be reduced (lines \ref{algo:reduced_shacl_validation:subset_selection_start} - \ref{algo:reduced_shacl_validation:subset_selection_end}). That is the target definition of a target shape $ts$, involved in the evaluation of another target shape $ts'$ may not be reduced, because the nodes $[[\uri{TARG}(C.ts)]]_G \setminus [[Q_s]]_G$ may be needed to evaluate $ts'$. In case the target definition of a target shape can be reduced, the filter condition used to further reduce the nodes in the target definition is computed per target shape. To avoid the evaluation of the right-hand side of the constraints, the SHACL validation needs to be performed interleaved with the constraint evaluation. Here for reasons of simplicity, line  \ref{algo:reduced_shacl_validation:filter_condition} can be thought of an oracle giving the correct filter condition.
+Finally, the SHACL engine can be run on the reduced shape schema $\mathcal{S}'$ consisting of the updated target definitions $\uri{TARG}$ and the shapes $S'$ relevant for evaluation of the target shapes $ts_i$ (line \ref{algo:reduced_shacl_validation:runShaclEngine}).
+\begin{algorithm}[H]
+    \caption{Pseudocode of the Reduced SHACL Validation}\label{algo:reduced_shacl_validation}
+    \begin{algorithmic}[1]
+         \Function{reducedSHACLValidation}{Constraints $\mathcal{C}$, Query $Q_D$, Knowledge Graph $G$}
+            \State $\textit{schemasForConstraints} \gets \emptyset$ \Comment{the list of constraints using the same shape schema}            
+            \State $\textit{relevantShapes} \gets \emptyset$ \Comment{the needed shapes per shape schema} \label{algo:reduced_shacl_validation:reachableShapesStart}
+            \State $\textit{involvedShapes} \gets \emptyset$ \Comment{the shapes involved when evaluating a constraint}
+            \State $Q_s = \uri{SELECT}(?x,id, Q_D)$ \Comment{id is the identity function}
+            \ForEach{$C \in \mathcal{C}$} 
+                \State $\Phi_{C.\mathcal{S}} \gets \textbf{createDependencyGraph}(C.\mathcal{S})$
+                \State $\textit{involvedShapes}[C] \gets \textbf{DFS}(\Phi_{C.\mathcal{S}}, C.ts)$
+                \State $\textit{relevantShapes}[C.\mathcal{S}] \gets \textit{relevantShapes}[C.\mathcal{S}] \cup \textit{involvedShapes}[C]$
+                \State $\textit{schemasForConstraints}[C.\mathcal{S}] = \textit{schemasForConstraints}[C.\mathcal{S}].\mathbf{append}(C)$
+            \EndFor \label{algo:reduced_shacl_validation:reachableShapesEnd}
+            \State $\textit{validate} \gets \emptyset$
+            \ForEach{$\mathcal{S} \in \textit{schemasForConstraints}$} \label{algo:reduced_shacl_validation:EachShapeSchema}
+                \State $\uri{TARG} \gets \mathcal{S}.\uri{TARG}$
+                \ForEach{$C \in \textit{schemasForConstraints}[\mathcal{S}]$} \label{algo:reduced_shacl_validation:subset_selection_start}
+                    \If{$C.ts \not\in \bigcup_{c \in \textit{schemasForConstraints}[\mathcal{S}] \setminus \{C\}} \textit{involvedShapes}[c]$} 
+                        \State $R \gets \textbf{getFilterConditionForConstraint}(C)$ \label{algo:reduced_shacl_validation:filter_condition}
+                        \State $\uri{TARG}(C.ts) \gets \uri{SELECT}(?x,id,((Q_s \uri{ AND } \uri{TARG}(C.ts)) \uri{ FILTER } R))$
+                    \EndIf
+                \EndFor \label{algo:reduced_shacl_validation:subset_selection_end}
+                \State $\textit{validate}[\mathcal{S}] \gets \mathbf{runShaclEngine}((\textit{relevantShapes}[\mathcal{S}],\uri{TARG}, \mathcal{S}.\uri{DEF}), G)$ \label{algo:reduced_shacl_validation:runShaclEngine}
+            \EndFor
+            \State \Return{$\textit{validate}$}
+        \EndFunction
+    \end{algorithmic}
+\end{algorithm}

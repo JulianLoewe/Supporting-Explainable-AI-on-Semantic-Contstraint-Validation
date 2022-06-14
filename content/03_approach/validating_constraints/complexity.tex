@@ -1,0 +1,15 @@
+Given the pseudocode of the validation engine, it is appropriate to analyze the time complexity of the approach. Inspection of the constraint validation engine yields three main parts to take into consideration:
+\begin{enumerate}
+    \item Querying the dataset together with the sample-to-node mapping
+    \item Performing the SHACL validation
+    \item Evaluating the constraints
+\end{enumerate}
+In the pseudocode, the first two parts are outsourced and hidden behind $[[Q_D]]_G$ and \textbf{runShaclEngine}. However, it should be noted, that even checking whether a given SPARQL mapping is contained in the set of answers of a query is PSPACE-complete, when not restricted to specific graph patterns \cite{perez2009semantics}. The complexity of the problem can be reduced to be coNP-complete, by limiting the graph patterns to \uri{OPTIONAL}, \uri{FILTER}, and \uri{AND}. Therefore, checking whether a SPARQL mapping will be retrieved by a SPARQL query written according to formula \ref{datset_generating_query_pattern} will be in coNP and the user may be advised to remove the \uri{OPTIONAL} patterns when possible to make the problem solvable in polynomial time. 
+
+Also, checking a SHACL schema against a knowledge graph is NP-complete in general \cite{corman2018semantics}. Therefore, the user of the engine should choose SHACL schemas non-recursively or without negations in recursive dependencies to reduce the complexity of the SHACL schema evaluation to polynomial time. 
+
+This result is not surprising, as in algorithm \ref{algo:shacl_engine} a SAT solver is used. The main difference between the engine in algorithm \ref{algo:shacl_engine} and the one implemented in SHACL2SPARQL \cite{corman2019validating} or Trav-SHACL \cite{figuera2021trav} is that the saturation performed by the SAT solver is performed interleaved with the materialization and grounding of the rules. 
+
+This leaves the third part to be performed by the implementation of the constraint validation engine. Algorithm \ref{algo:validation_engine} proves that evaluating the constraints, given the necessary components, as in the \textbf{evaluateConstraints} function, can be done with a time complexity of $O(|\mathcal{C}| * |D|)$ assuming constant length constraints and a data structure like a hash table to access the SHACL validation result in constant time.
+
+Overall, the complexity of the validation engine depends on the complexity arising through querying the knowledge graph and performing the SHACL validation. In a worst-case scenario, this results in the problem being PSPACE-complete. However, wisely choosing the SPARQL query to retrieve the data and the constraints yields a polynomial run time, on which further extensions and improvements can be built.

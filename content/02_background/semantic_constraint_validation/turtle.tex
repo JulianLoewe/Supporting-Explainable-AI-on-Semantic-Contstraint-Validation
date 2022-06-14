@@ -1,0 +1,56 @@
+    Given the abstract RDF data model, it makes sense to define a concrete textual syntax to serialize RDF graphs. The W3C recommended language for serializing RDF graphs is Turtle. Turtle -- short for Terse RDF Triple Language -- is built on top of the N-Triples serialization, with the goal of a more compact serialization. Thus, every N-Triples serialization is a Turtle serialization. \cite{beckett2014rdf} The Turtle serialization as presented here is defined in \cite{beckett2014rdf} and the N-Triples serialization is defined in \cite{beckett2014ntriples}.
+    
+    Turtle is introduced by serializing an extended subset of the RDF graph given in the motivating example in figure \ref{fig:motivating_example_kg}. First, using N-Triples and building on that in a more compact form using Turtle.
+    
+    \paragraph{N-Triples} As the name ``N-Triples'' suggests, the serialization of an RDF graph with $N$ different triples is just writing down $N$ triples. A dot is used to mark the end of a triple. Each triple consists of a subject, predicate, and object, which are separated by a space. In listing \ref{lst:brackground_example_ntriples_serialization} the graph consists of $6$ triples. The end of each of them is marked with a dot. 
+    
+    \lstset{language=html}
+    \begin{lstlisting}[float, captionpos=b, caption=N-Triples serialization of a superset of a subgraph of figure \ref{fig:motivating_example_kg}, label=lst:brackground_example_ntriples_serialization, basicstyle=\ttfamily, frame=single]
+    <http://example.org/Max> <http://example.org/gender> "male"@en .
+    <http://example.org/Max> <http://example.org/contact_with> <http://example.org/Maria> .
+    <http://example.org/Max> <http://example.org/allergic_to> "polyethylene glycol"@en .
+    <http://example.org/Max> <http://example.org/allergic_to> "broccoli"@en .
+    <http://example.org/Max> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> 
+    <http://example.org/Person> .
+    <http://example.org/Maria> <http://example.org/age> 
+    34^^<http://www.w3.org/2001/XMLSchema#integer> .
+    \end{lstlisting}
+    
+    An IRI is always enclosed with ``<'' and ``>'' to distinguish it from literals. As defined in definition \ref{Def:rdf_literal}, a literal is just a string associated with a data type. Literals without a predefined data type have their data type annotated with a preceding ``\^{}\^{}'' and the corresponding data type, expressed as IRI. According to definition \ref{Def:rdf_triple}, each predicate of a triple has to be an IRI. This can also be validated in listing \ref{lst:brackground_example_ntriples_serialization}, where each predicate is marked as an IRI. Furthermore, the last triple has as an object the literal $34$. As the $34$ is meant to be of the data type integer, it is annotated with the IRI \uri{http://www.w3.org/2001/XMLSchema\#integer}.
+
+    A particular case of a literal is one surrounded with ``\uri{''}'', which has the data type string predefined (see example \ref{Bsp:rdf_vocabulary}) and should instead be annotated with a language tag. This is done by extending the literal with ``@'' and the language tag, which is a Unicode string without spaces. In listing \ref{lst:brackground_example_ntriples_serialization} the first and the third triple have a literal of data type string as an object, which is additionally marked with the language tag ``en''. 
+    
+    \paragraph{Turtle} Next, listing \ref{lst:brackground_example_ntriples_serialization} is inspected to introduce some useful shortcuts defined in Turtle.
+    The first thing one notices when inspecting listing 2 is that it does not use the shorthand already defined in section \ref{background_rdf} for IRIs with a common prefix. To be able to use these namespaces, one first needs to define them. This is done by using the ``@prefix'' keyword followed by the namespace, ``:'' and the IRI, which is replaced by the namespace. 
+    In listing \ref{lst:brackground_example_turtle_serialization}, there are two prefixes defined. The first maps the empty namespace to \uri{http://example.org/} and the second maps ``xsd'' to \uri{http://www.w3.org/2001/XMLSchema\#}.
+    After defining the prefixes, they can be used as already demonstrated in example \ref{Bsp:rdf_vocabulary}. There is no longer any need to encapsulate them in ``<'' and ``>''.
+    \lstset{language=html}
+    \begin{lstlisting}[float,captionpos=b, caption=A Turtle serialization of the graph serialized with N-Triples in listing \ref{lst:brackground_example_ntriples_serialization}, label=lst:brackground_example_turtle_serialization, basicstyle=\ttfamily, frame=single]
+    @prefix : <http://example.org/>
+    @prefix xsd: <http://www.w3.org/2001/XMLSchema#>
+
+    :Max :gender "male"@en ;
+         :contact_with :Maria ;
+         :allergic_to "polyethylene glycol"@en, "broccoli"@en ;
+         a :Person .
+    :Maria :age 34^^xsd:integer .
+    \end{lstlisting}
+    Next, there are four triples, starting with \uri{:Max}, which can also be written short in Turtle by allowing predicate object lists. Such a list of triples with a common subject is separated with a semicolon. The analog is also applied to triples with subject and predicate in common by allowing object lists to be separated with a comma. Finally, Turtle also allows writing ``a'' instead of \uri{<http://www.w3.org/1999/02/22-rdf-syntax-ns\#type>} to denote the class of an IRI. All these features of Turtle allow the graph, serialized in listing \ref{lst:brackground_example_ntriples_serialization}, with N-triples to be represented in a more compact and readable form in listing \ref{lst:brackground_example_turtle_serialization} with Turtle.
+    
+    Both serializations allow the use of blank nodes. A blank node with name \uri{b} is referred to with \uri{\_:b} and can then be used in subject and object position as defined in definition \ref{Def:rdf_triple}.
+    When a blank node occurs only in the subject position of triples \uri{[(\_:b,p1,o1),(\_:b,p2,o2),...]} and exactly once in another position, there is an additional shorthand in Turtle. In that case, one can replace the blank node occurring only once with open and closing square brackets. Then inside them have the triples referring to the blank node as the subject with a (possibly empty) predicate-object list. This is heavily used when defining SHACL constraints (see section \ref{background_shacl}). % For example one might look at listing \ref{lst:motivating_example_shape_network} as a normal RDF graph.
+    
+% beckett2014rdf
+% \begin{itemize}
+%     \item Turtle short for the Terse RDF Triple Language x 
+%     \item defines a compact textual syntax to serialize RDF Graphs x
+%     \item build upon N-Triples serialization  x
+%     \item Namespaces --> @prefix Notation to define shorthands in Prologue (can appear anywhere outside of a triple but to be conform with the usage in SPARQL, its easier to write them in the beginning) --> some further differences besides usage of variables and Literals as subject. x
+%     \item IRIs --> absolute/relative encapsulated with < >; ansonsten prefix: local\_part x
+%     \item Literals --> " "@en " "\^\^data type with defaults xsd:string as default for quoated Literals, xsd:integer, xsd:boolean 
+%     \item Notation of Triples (separated with .) with some shorthands. --> Predicate Lists (;) --> object lists (,) 
+%     \item Classes are commonly used in RDF such that Turtle has a own shorthand for it: "a"
+%     \item Blank Nodes --> special prefix for blank node uris: \_; other shorthand for nested usage with [].
+%     \item Lists ? rdf:first , rdf:rest, ( ) shorthand
+% \end{itemize}
+% + Example RDF Graph to be used for the rest of the examples

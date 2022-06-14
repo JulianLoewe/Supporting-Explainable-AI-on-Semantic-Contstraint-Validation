@@ -1,0 +1,182 @@
+
+% Short Introduction --> Need for SHACL Constraint validation over knowledge graphs
+At this point, a knowledge graph might be made available by a SPARQL endpoint and can then be queried using SPARQL queries. However, as mentioned in the introduction, the goal is to exploit the structure of the knowledge graph to get further insights into machine learning models by using semantic constraint validation. SHACL -- short for Shapes Constraint Language -- is the W3C recommended language to describe constraints and validate RDF graphs against them \cite{knublauch2017shapes}. The approach is described in terms of the abstract syntax for the SHACL core constraint components, as introduced by Cormen et al. \cite{corman2018semantics}. The notation has the advantage of being compact, allowing recursive schemas, and being translatable into the SHACL language.
+
+% Example Introduction: Validating the Shape: risk_group, vaccinated stranger
+Let us return to the example knowledge graph about the properties of people having contact with each other. The government might have passed a law that states that everyone who is not vaccinated can only have contact with up to five vaccinated strangers. A vaccinated stranger is defined as another person who is vaccinated and not pregnant. Now, the knowledge graph can be checked against those constraints to enforce the law. The example constraint makes the distinction between two groups of people. Here, these two groups are described by shapes. The first shape might be called, \uri{:risk\_group} and the second \uri{:vaccinated\_stranger}. A set of shapes is called a shape schema. A shape comes with a logical expression, which enforces constraints. Further components of the shape are the name, which identifies the shape, and the target definition, which defines the scope for the shape in the knowledge graph. 
+
+A constraint uses certain properties of the entity, which property paths can identify.
+
+\begin{Def}{Property Path (general concept as in \cite{knublauch2017shapes})}{shacl_property_path}
+A property path $p$ defines a path between two nodes in a knowledge graph. The evaluation of $p$ over $G \in \mathbf{G}$ is done with a function \uri{path}($p$, $G$) to give a SPARQL mapping $\mu$ with $\text{dom}(\mu) = \{\text{?s}_p, \text{?e}_p\}$. The variable $\text{?s}_p$ represents the start node and the variable $\text{?e}_p$ the end node of the path. The infinite set of property paths is denoted with $\overrightarrow{\mathbf{P}}$.
+The recursive definition of a property path is given in the table below, which uses $I \in \mathbf{I}$, $p_1,...,p_n \in \overrightarrow{\mathbf{P}}$ and the renaming functions
+\begin{align*}
+\mathcal{r}_\text{seq} = & \{(\text{?s}_{p_1} \mapsto \text{?s}_p), (\text{?e}_{p_n} \mapsto \text{?e}_p)\} \cup\\ & \{(\text{?e}_{p_i} \mapsto \text{?s}_{p_{i+1}}) \mid \forall i \in [1,2,...,n-1]\} \cup\\ & \{(\text{?v} \mapsto \text{?v}) \mid \forall \text{?v} \in (\mathbf{V} \setminus (\{\text{?s}_{p_1}\} \cup \{\text{?e}_{p_i} \mid \forall i \in [1,2,...,n]\}) )\}\\\\
+\mathcal{r}_\text{inv} = & \{(\text{?s}_{p_1} \mapsto \text{?e}_p), (\text{?e}_{p_1} \mapsto \text{?s}_p)\} \cup \{(\text{?v} \mapsto \text{?v}) \mid \forall \text{?v} \in (\mathbf{V} \setminus \{\text{?s}_{p_1}, \text{?e}_{p_1}\} )\}
+\end{align*}
+\begin{center}
+     \begin{tabular}{l|l|l}
+             \toprule
+             name & property path $p$ & evaluation \uri{path}($p$, $G$) \\
+             \midrule
+             \midrule
+             Predicate paths & $I$ &  $[[(\text{?s}_p, I, \text{?e}_p)]]_G$\\
+             Inverse paths & \^{}$p_1$ & $\rho(\mathcal{r}_\text{inv}, \uri{path}(p_1, G))$\\
+             Sequence paths & $p_1/p_2/.../p_n$ & $\pi_{\text{?s}_p,\text{?e}_p}(\rho(\mathcal{r}_\text{seq}, \text{\Large$\bowtie$}_{i \in [1,2,...,n]} \uri{path}(p_i, G) ))$\\ 
+             \bottomrule
+        \end{tabular}
+\end{center}
+To abbreviate the notation, let $[[p]]_G$ be the shorthand for 
+\begin{gather*}
+    \{ (v_s, v_e) \mid \{(\text{?s}_p \mapsto v_s), (\text{?e}_p \mapsto v_e)\} \in \mathcal{G}_{path(p,G)}\}
+\end{gather*}
+\end{Def}
+
+Using the concept of property paths, constraints can be defined:
+
+\begin{Def}{Property Path Constraint \cite{corman2018semantics}}{shacl_constraint}
+A property path constraint is a logical expression $\phi$ included in the language that contains the words of the following grammar defined in the Backus-Naur-Form \cite{backusForm}:
+\begin{gather*}
+    \text{c} := \top \mid s \mid I \mid {\geq}_n p_1.\phi \mid \text{EQ}(p_1,p_2)\\
+    \phi := \neg \phi \mid \phi \land \phi \mid \text{c}
+\end{gather*}
+where $s$ is a shape name, $I \in \mathbf{I}$, $p_1,p_2 \in \overrightarrow{\mathbf{P}}$ and $n \in \mathbb{N} \cup \{0\}$.
+The infinite set of all possible constraints is denoted with $\mathbf{C_P}$.
+\end{Def}
+
+Therefore, a constraint is a logical expression $\phi$, consisting of terms $c$. These terms can be split into two (possibly empty) groups. The first group is called inter-shape constraints and includes all terms referring to shape names denoted with $s$ in definition \ref{Def:shacl_constraint}. The second group, including the rest, is called intra-shape constraints. Hence, the intra-shape constraints describe the entity based on its properties, and the inter-constraints allow entities to depend on each other.
+
+During the validation of a knowledge graph, each shape is checked against a possibly empty set of target nodes. A target query identifies these target nodes.
+\begin{Def}{Target Query \cite{corman2018semantics}}{shacl_target_query}
+A target query $Q_{T_s}$ is a SPARQL \uri{SELECT} query with $|\text{dom}([[Q_{T_s}]]_G)| = 1$ for all $G \in \mathbf{G}$ defined for a shape named $s$. The infinite set of all possible target queries is $\mathbf{Q_T} \subset \mathbf{Q}$.
+\end{Def}
+
+Without loss of generality, let $\Omega = [[Q_{T_s}]]_G$ be the set of solution mappings of a target query $Q_{T_s} \in \mathbf{Q_T}$ with $\forall \mu \in \Omega ~ \text{dom}(\mu) = \{\text{?x}\}$ and ?x $\in \mathbf{V}$ an arbitrary variable. In that case, the notation of the set of solution mappings can be shortened to a set of solution values $\{\mu(\text{?x}) \mid \mu \in \Omega \}$. Therefore, to check whether there is a solution mapping, $\{(\text{?x} \mapsto v_1)\} \in \mathcal{G}_\Omega$ the shorthand $v_1 \in \Omega$ can be used.
+
+Given all the components, the notion of a shape schema can be defined.
+\begin{Def}{Shape Schema \cite{corman2018semantics}}{shacl_shape_schema}
+A shape schema is a triple $\mathcal{S} = (S, \uri{TARG}, \uri{DEF})$ consisting of a set of shape names $S$, a function returning a target query $\uri{TARG}: S \to \mathbf{Q_T}$ and a function returning a property path constraint $\uri{DEF}: S \to \mathbf{C_P}$ for each shape $s \in S$.
+The components of the shape schema $\mathcal{S}$ can be accessed by $\mathcal{S}.S$, $\mathcal{S}.\uri{TARG}$ and $\mathcal{S}.\uri{DEF}$.
+The infinite set of all possible shapes is denoted with $\mathbf{S}$ and the infinite set of all possible shape schemas with $\mathbf{SN}$
+\end{Def}
+
+\begin{Bsp}{Shape Schema with references to the SHACL language}{shape_schema}
+This example continues  the example in the introductory text of this section by defining the shape schema $\mathcal{S} = (S, \uri{TARG}, \uri{DEF})$ according to the definition above.
+As mentioned, there will be two shapes. The first one called \uri{:risk\_group} and the second one called \uri{:vaccinated\_stranger}. Therefore, it is $$S = \{\uri{:risk\_group}, \uri{:vaccinated\_stranger}\}$$ The attentive reader might notice the colons in front of the names, which typically indicate an IRI with an empty prefix in the Turtle syntax. That is because in the SHACL language (not the abstraction used here), a shape is identified by an IRI of the class \uri{sh:NodeShape} and a shape schema is basically a knowledge graph serialized with Turtle containing a set of IRIs annotated with RDF terms defined in the SHACL namespace \uri{http://www.w3.org/ns/shacl\#} with the shorthand \uri{sh} \cite{knublauch2017shapes}. 
+
+Next, the \uri{TARG} function needs to be defined for $S$. As every person can be a \uri{:vaccinated\_stranger} the shape has as scope the nodes of the class person. A person is in the scope of \uri{:risk\_group} if the person is not vaccinated. That is because the law should be enforced, and the goal is to identify the persons in the scope of \uri{:risk\_group} with more than five contacts with persons of type \uri{:vaccinated\_stranger}.
+\begin{center}
+  \begin{minipage}[t]{0.45\textwidth}
+    \lstset{language=html}
+    \begin{lstlisting}[captionpos=b, caption=\uri{TARG}(\uri{:risk\_group}), basicstyle=\ttfamily, frame=single]
+    PREFIX : <http://example.org/>
+    SELECT ?x WHERE {
+        ?x a :Person .
+        ?x :vaccinated False
+    }
+    \end{lstlisting}\end{minipage}
+\hspace{0.1cm}
+\begin{minipage}[t]{0.45\textwidth}
+    \lstset{language=html}
+    \begin{lstlisting}[captionpos=b, caption=\uri{TARG}(\uri{:vaccinated\_stranger}) , basicstyle=\ttfamily, frame=single]
+    PREFIX : <http://example.org/>
+    SELECT ?x WHERE {
+        ?x a :Person
+    }
+    \end{lstlisting}\end{minipage}  
+\end{center}
+In the SHACL language, there is no concept of a target query. Instead, there are RDF triples indicating the target nodes explicitly, by class or implicitly as subject or object of a specific predicate \cite{knublauch2017shapes}. Therefore, the targets would be defined by two RDF triples $(\uri{:risk\_group}, \uri{sh:targetClass}, \uri{:NotVaccinatedPerson})$ and $(\uri{:vaccinated\_stranger}, \uri{sh:targetClass}, \uri{:Person})$.
+
+Finally, the function $\uri{DEF}$ giving the property path constraints for each shape $s \in S$ needs to be defined. To conform with \uri{:risk\_group}, a person cannot have more than five contacts with \uri{:vaccinated\_stranger}.
+\begin{align*}
+    \uri{DEF}(\uri{:risk\_group}) = ~ & \neg (\geq_6 \uri{:contact\_with.:vaccinated\_stranger})\\
+\end{align*}
+A \uri{:vaccinated\_stranger} has to be vaccinated and cannot be pregnant.
+\begin{align*}
+    \uri{DEF}(\uri{:vaccinated\_stranger}) = ~ & (\geq_1 \uri{:vaccinated.True})~ \land\\
+                                             & (\geq_1 \uri{:pregnant.False})
+\end{align*}
+
+When using the SHACL language to express constraints, nodes of the class \uri{sh:PropertyShape} are used. These can be characterized by various properties and have to be connected to a \uri{sh:NodeShape} via \uri{sh:property}. In this example, the full SHACL shape schema expressed with Turtle would be:
+    \lstset{language=html}
+    \begin{lstlisting}[captionpos=b, caption=The Example SHACL Shape Schema Serialized with Turtle , basicstyle=\ttfamily, frame=single]
+    PREFIX : <http://example.org/>
+    PREFIX sh: <http://www.w3.org/ns/shacl\#>
+    :risk_group
+        a sh:NodeShape ;
+        sh:targetClass :NotVaccinatedPerson ;
+        sh:property [
+            sh:path :contact_with ;
+            sh:qualifiedValueShape :vaccinated_stranger ;
+            sh:qualifiedMaxCount 5 .
+        ] .
+    :vaccinated_stranger
+        a sh:NodeShape ;
+        sh:targetClass :Person ;
+        sh:property [
+            sh:path :vaccinated ;
+            sh:hasValue "True" ;
+            sh:minCount 1 .
+        ] ;
+        sh:property [
+            sh:path :pregnant ;
+            sh:hasValue "False" ;
+            sh:minCount 1 .
+        ] .
+    \end{lstlisting}
+\end{Bsp}
+
+% Notion of assignment \sigma with atoms.
+The task of validating a shape schema $\mathcal{S} = (S, \uri{TARG}, \uri{DEF})$ against a knowledge graph $G$ is to find a faithful assignment $\sigma$. An assignment $\sigma$ is a set of atoms of the form $s(v)$, where $s \in S$ is a shape and $v$ is a node $v \in V_G$. If $s(v) \in \sigma$ then $v$ is called valid with respect to $s$ according to $\sigma$ and $\neg s(v) \in \sigma$ means that $v$ violates $s$ according to $\sigma$. A valid assignment can only contain $s(v)$ or $\neg s(v)$ and not both. However, it has to contain $s(v)$ or $\neg s(v)$ for each target $v \in \bigcup_{s \in S} [[\uri{TARG}(s)]]_G$. Additionally, a valid assignment $\sigma$ is called faithful if for all $s(v) \in \sigma$, $v$ \emph{indeed} satisfies $s$ and for all $\neg s(v) \in \sigma$, $v$ \emph{indeed} does not satisfy $s$. The satisfaction is measured with respect to the assignment. Therefore, there can be a faithful assignment $\sigma$ with $s(v) \in \sigma$ and another one $\sigma_2$ with $s(v) \not\in \sigma_2$. \cite{corman2018semantics}
+
+What remains is to evaluate whether a node $v$ \emph{indeed} satisfies a shape $s \in S$ of a given knowledge graph $G$ and an assignment $\sigma$. But that is something which can be reduced to the problem of evaluating a property path constraint $c$ given by $\uri{DEF}(s)$ as defined in definition \ref{Def:shacl_constraint}. The evaluation is denoted with $[[c]]_{G,v,\sigma}$ and is done inductively over the components of $c$. Table \ref{shacl_evaluation_of_constraints} includes the non-trivial part of the evaluation. The rest is evaluated according to a normal logical expression.
+
+\begin{figure}[h] %TODO: Maybe change to use 
+    \centering
+         \begin{tabular}{l|l}
+             \toprule
+             Constraint $C$ & Evaluation $[[C]]_{G,v,\sigma}$ \\
+             \midrule
+             \midrule
+              $s$ & $\top$ if $s(v) \in \sigma$ else $\bot$ \\
+              $I$ & $\top$ if $v = I$ else $\bot$\\
+              ${\geq}_n p_1.\phi$ & $\top$ if $|\{v' \mid (v,v') \in [[p]]_G \text{ and } [[\phi]]_{G,v',\sigma} = \top \}| \geq n$ else $\bot$\\
+              $\text{EQ}(p_1,p_2)$ & $\top$ if $\{v' \mid (v,v') \in [[p_1]]_G\} = \{v' \mid (v,v') \in [[p_2]]_G\}$ else $\bot$\\
+             \bottomrule
+        \end{tabular}
+    \caption{Evaluation of a constraint $C$ given a node $v$ and a assignment $\sigma$ \cite{corman2018semantics}}
+    \label{shacl_evaluation_of_constraints}
+\end{figure}
+
+Therefore, a node $v$ in a knowledge graph $G$ is \emph{indeed} valid with respect to a shape $s$ in a shape schema $\mathcal{S}$ if $[[\uri{DEF}(s)]]_{G,v,\sigma} = \top$ is true.
+
+An engine producing a faithful assignment $\sigma$ for a shape schema $\mathcal{S} = (S, \uri{TARG}, \uri{DEF})$ given a knowledge graph $G$ can only use SPARQL queries to get information about the knowledge graph. Such an engine is shown in Algorithm \ref{algo:shacl_engine}, which is now described. 
+In a first step, for each shape, $s$ the target nodes $[[\uri{TARG}(s)]]_G$ of the shapes are retrieved. Given the instances to be checked against each shape $s$, the constraints encoded in $\uri{DEF}(s)$ are converted into SPARQL queries. The solution mappings retrieved, yield a set of rules involving the atoms $s(v)$ with $v \in [[\uri{TARG}(s)]]_G$ and atoms $s'(v')$ connected to $s(v)$ by inter-shape constraints. (line \ref{algo:shacl_engine:matStart} - \ref{algo:shacl_engine:matEnd}).
+This set of rules can then be solved by a SAT solver to get the faithful assignment $\sigma$ (line \ref{algo:shacl_engine:sat_solver}). Finally, it is useful to convert the assignment produced into a partial function as defined below (line \ref{algo:shacl_engine:convertStart} - \ref{algo:shacl_engine:convertEnd}).
+\begin{Def}{Entity Validation \cite{valSPARQL}}{shacl_entity_validation}
+The result of a SHACL validation process for a node $v \in V_G$ and a shape $s \in S$ given a knowledge graph $G$ and a SHACL shape schema $\mathcal{S} = (S, \uri{TARG}, \uri{DEF})$ is represented as a partial function:
+\begin{gather*}
+    \text{validate:} (\mathbf{B} \cup \mathbf{I}) \times \mathbf{S} \times \mathbf{G} \to \{\top, \bot\}
+\end{gather*}
+\end{Def}
+
+    \begin{algorithm}
+    \caption{Pseudocode of a SHACL engine} \label{algo:shacl_engine}
+    \begin{algorithmic}[1] 
+    \Function{runShaclEngine}{Shape Schema $\mathcal{S}$, Knowledge Graph $G$} 
+        \State $\textit{rules} \gets \emptyset$ \label{algo:shacl_engine:matStart}
+    	\ForEach{$s \in S$}
+    	    \State $\textit{rules} \gets \textit{rules} \cup \textbf{materialize}(S.\uri{DEF}(s), G)$
+    	\EndFor \label{algo:shacl_engine:matEnd}
+    	\State $\sigma \gets \textbf{SAT\_Solver}(\textit{rules})$ \label{algo:shacl_engine:sat_solver}
+    	\State $\textit{validate} \gets \emptyset$ \label{algo:shacl_engine:convertStart}
+    	\ForEach{$s(v) \in \sigma$} 
+    	    \State $\textit{validate} \gets \textit{validate} \cup \{(s,S,G) \mapsto \top\}$
+    	\EndFor
+    	\ForEach{$\neg s(v) \in \sigma$}
+    	    \State $\textit{validate} \gets \textit{validate} \cup \{(s,S,G) \mapsto \bot\}$
+    	\EndFor \label{algo:shacl_engine:convertEnd}
+    	\State \Return{$\textit{validate}$}
+    \EndFunction
+    \end{algorithmic}
+    \end{algorithm}

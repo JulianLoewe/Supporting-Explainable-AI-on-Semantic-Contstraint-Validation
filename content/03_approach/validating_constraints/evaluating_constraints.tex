@@ -1,0 +1,181 @@
+At this point, all the inputs $(\mathcal{C}, M_\theta, D, G, \eta)$ of the problem defined in lemma \ref{S:problem_validating_constraints_over_ai_model} are available. Initially, a user defines a set of constraints $\mathcal{C}$ to be evaluated over a knowledge graph $G$ and a machine learning model $M_\theta$. Here the model is assumed to be already trained with parameters $\theta$; for example, using the dataset $D$ generated from the knowledge graph $G$. The generation process is tracked to create the sample-to-node mapping $\eta$. Here the semantics of the constraints are defined, such that approaches to a more efficient evaluation can be tackled in section \ref{section_improving_approach}.
+
+As explained in section \ref{section_problem_definition}, the sample-to-node mapping allows connecting the prediction $M_\theta(\mathbf{x}_i)$ of a problem instance $\mathbf{x}_i$ with the validation result of a target shape $ts$ in a shape schema $\mathcal{S}$ over the node $\eta(i)$ in a knowledge graph $G$. This connection was, therefore, incorporated into the definition of the constraint with the hint of a semantics similar to the implication used in Boolean formulas. Now, the semantics of a constraint is approached bottom-up and from the left-hand side to the right-hand side. 
+
+On the left-hand side of a constraint, there is the shape schema $\mathcal{S} = (S, \uri{TARG}, \uri{DEF})$ annotated with a target shape $ts \in S$. The target shape denotes the shape, which is used during the validation (see definition \ref{Def:shacl_entity_validation}) of the node $\eta(i)$. This is necessary because for each shape $s \in S$ there are validation results corresponding to $\eta(i) \in [[\uri{TARG}(s)]]_G$. Evaluating the left-hand side of the constraint is, therefore, done by executing the entity validation function with the given parameters: 
+\begin{gather}
+    [[\mathcal{S}\big|_{ts}]]_{G,\eta(i)} = \begin{cases} \text{validate}(\eta(i),ts,G) & \eta(i) \in [[\uri{TARG}(ts)]]_G\\ \top & \text{else}
+    \label{F:constraint_eval_1} \end{cases}
+\end{gather}
+
+As there might be instances retrieved by the seed query ($n \in [[Q_s]]_G$), which are not part of the target definition of the target shape defined for the constraint ($n \notin [[\uri{TARG}(ts)]]_G$), the case distinction is necessary. These nodes $n$ are handled as if they were valid according to the target shape.
+
+On the right-hand side of the constraint, there is the logical expression $\phi_{T}$ involving one free variable $T$. To evaluate the formula, $T$ needs to be substituted with the predicted result $M_\theta(\mathbf{x}_i)$ and then be evaluated. Formally, the evaluation is done over a structure $\mathbb{S}$ with $\mathbb{T}$ as a carrier, functions, relations and constants defined for $\mathbb{T}$ and an assignment $\beta$ with $\mathcal{G_\beta} = \{(T \to M_\theta(\mathbf{x}_i))\}$.
+Therefore, it holds:
+\begin{gather}
+    [[\phi_{T}]]_{M_\theta(\mathbf{x}_i)} = 1 \Leftrightarrow  (\mathbb{S},\beta) \models \phi_{T} \label{F:constraint_eval_2}
+\end{gather}
+Next, the evaluation results need to be combined. The combination is done with the special symbol $\rightsquigarrow$ defined for the evaluation with a 3-valued logic designed for this application.
+
+\begin{Def}{Interpreting formulas using the 3-valued logic}{3valuedlogic}
+The 3-valued logic extends the Boolean logic by the introduction of a third symbol $-1$. The symbol is used to rate whether a formula $\sigma$ is modeled by an interpretation $\mathcal{I}: var(\sigma) \to \{0,1,-1\}$. Therefore it holds: 
+    \[(\mathcal{I} \models \sigma) \in \{-1,0,1\}\]
+$-1$ expresses that $\mathcal{I}$ does not apply to $\sigma$, $0$ expresses that $\mathcal{I}$ is an invalid interpretation for $\sigma$ and $1$ expresses that $\mathcal{I}$ is an valid interpretation for $\sigma$.
+\end{Def}
+
+To define the semantics of $\rightsquigarrow$, the Scott brackets are used for notation convenience.
+
+\begin{Def}{The Semantics of $\rightsquigarrow$}{semantics_constraint_implication}
+Let $A$ and $B$ be formulas, which can be evaluated using the Scott brackets by $[[A]]_\alpha$ and $[[B]]_\beta$ and the necessary parameters $\alpha$ and $\beta$. Syntactically writing $A \rightsquigarrow B$ is allowed if $\forall \alpha, \beta ~ [[A]]_\alpha, [[B]]_\beta \in \{-1,0,1\}$. Then the evaluation of $A \rightsquigarrow B$ denoted with $[[A \rightsquigarrow B]]_{\alpha,\beta}$ is defined as shown in the following truth table.
+\begin{center}
+            \begin{tabular}{c|c|c}
+             \toprule
+             $[[A]]_\alpha$ & $[[B]]_\beta$ & $[[A \rightsquigarrow B]]_{\alpha,\beta}$ \\
+             \midrule
+             \midrule
+             $0$ & $0$ & $-1$ \\
+             $0$ & $1$ & $-1$ \\
+             $1$ & $0$ & $0$ \\
+             $1$ & $1$ & $1$ \\
+             \bottomrule
+        \end{tabular}
+\end{center}
+All further possible combinations of $[[A]]_\alpha$ and $[[B]]_\beta$ evaluated to $-1$.
+\end{Def}
+
+The following example should make the evaluation of formulas using the $\rightsquigarrow$ of the 3-valued logic, and the interpretation coming with it, better understandable.
+
+\begin{Bsp}{Evaluating formulas of the 3-valued logic}{}
+    This example is about a voting scenario. The candidates are \textit{Armin Laschet} or \textit{Olaf Scholz}. Each person permitted to vote is given a voting form with two boxes, one for each candidate. A vote is called compliant with the rules if exactly one box is checked. There are two formulas given. 
+    \begin{description}
+        \item[\textbf{Formula $A$}] evaluates to $-1$ if the vote was not done compliant with the rules, $0$ if the vote was done compliantly for $\textit{Armin Laschet}$, and $1$ if the vote was done compliantly for $\textit{Olaf Scholz}$. 
+        \item[\textbf{Formula $B$}] evaluates to $1$ if the person checked the box for $\textit{Armin Laschet}$ and otherwise evaluates to $0$.
+    \end{description}
+
+    Let us assume person 1 only checks the box for \textit{Olaf Scholz}, person 2 only checks the box for \textit{Armin Laschet}, and person 3 checks both boxes. In this context, the interpretation $\mathcal{I}$ determines the boxes checked by providing the person. 
+    
+    Now we may be interested in evaluating $A \rightsquigarrow B$ (``Voting compliantly for $\textit{Olaf Scholz}$ is a requirement for checking the box for $\textit{Armin Laschet}$'') and $\neg B \rightsquigarrow A$ (``Not checking the box for $\textit{Armin Laschet}$ is a requirement to vote compliantly for $\textit{Olaf Scholz}$'') according to definition \ref{Def:semantics_constraint_implication} for the different interpretations, given in the form of persons. Table \ref{tab:eval_3valuedlogic_table1} and \ref{tab:eval_3valuedlogic_table2} shows the result of the evaluation. 
+
+\captionsetup{type=htypei}
+\begin{minipage}[t]{0.5\linewidth}
+    \vspace{1ex}
+    \centering
+            \begin{tabular}{l|c|c|c}
+             \toprule
+             p & $[[A]]_p$ & $[[B]]_p$ & $[[A \rightsquigarrow B]]_p$ \\
+             \midrule
+             \midrule
+             Person 1 & $1$ & $0$ & $0$ \\
+             Person 2 & $0$ & $1$ & $-1$ \\
+             Person 3 & $-1$ & $1$ & $-1$ \\
+             \bottomrule
+        \end{tabular}
+    \captionof{table}{Evaluating $A \rightsquigarrow B$}
+    \label{tab:eval_3valuedlogic_table1}
+\end{minipage}
+\begin{minipage}[t]{0.5\linewidth}
+    \vspace{1ex}
+    \centering
+            \begin{tabular}{l|c|c|c}
+             \toprule
+             p & $[[\neg B]]_p$ & $[[A]]_p$ & $[[\neg B \rightsquigarrow A]]_p$ \\
+             \midrule
+             \midrule
+             Person 1 & $1$ & $1$ & $1$ \\
+             Person 2 & $0$ & $0$ & $-1$ \\
+             Person 3 & $0$ & $-1$ & $-1$ \\
+             \bottomrule
+        \end{tabular}
+    \captionof{table}{Evaluating $\neg B \rightsquigarrow A$}
+    \label{tab:eval_3valuedlogic_table2}
+\end{minipage}
+\end{Bsp}
+
+In the context of evaluating a constraint $C \in \mathbf{C}$, the evaluation is even simpler, as $\mathcal{S}\big|_{ts}$ and $\phi_{T}$ always evaluate to $0$ or $1$. Definition \ref{Def:eval_constraints} concludes the process of evaluating a constraint $C$ given a problem instance $\mathbf{x}_i$, a knowledge graph $G$, a machine learning model $M_\theta$ and a sample-to-node mapping $\eta$.
+
+\begin{Def}{Constraint Evaluation given a Problem Instance}{eval_constraints}
+A constraint $C \in \mathbf{C}$ can be evaluated over a problem instance $\mathbf{x}_i$ given a trained machine learning model $M_\theta$, a knowledge graph $G$ and a sample-to-node mapping $\eta$ with $[[C]]_{M_\theta(\mathbf{x}_i), G, \eta(i)}$.
+\end{Def}
+
+As a remark, $C$ is of form $\mathcal{S}\big|_{ts} \rightsquigarrow \phi_{T}$ and, therefore, evaluating $C$ according to definition \ref{Def:eval_constraints} means to apply formulas \ref{F:constraint_eval_1} and \ref{F:constraint_eval_2}, and combine these results with definition \ref{Def:semantics_constraint_implication}. The whole evaluation process is demonstrated using the following example, building on the motivating example.
+
+\begin{Bsp}{Evaluating the Example Constraint}{evaluating_example_constraint}
+This example continues the motivating example and, therefore, makes use of the sample-to-node mapping $\eta$ from example \ref{Bsp:sample-to-node_mapping_motivating_example}, created in example \ref{Bsp:creating_the_motivating_example_dataset} from the knowledge graph $G$ illustrated in Figure \ref{fig:motivating_example_kg}. The goal is to validate the constraint 
+$$\mathcal{S}\big|_{\uri{:PersonShape}} \rightsquigarrow \phi_{\text{vaccinated}}$$
+from example \ref{Bsp:motivating_example_constraint_definition}, given the already trained decision tree in Figure \ref{motivating_example_decision_tree}.
+Since only a part of the knowledge graph is given, the SHACL validation process will be done by reasoning using table \ref{fig:example_dataset_person_type_number_of_contacts}:
+\captionsetup{type=htypei}
+\begin{minipage}[t]{\linewidth}
+    \vspace{1ex}
+    \centering
+    \begin{tabular}{l|c|clclc}
+        \toprule
+        person & \#\uri{cw} & \uri{:allergic\_to} & \uri{:gender} & \uri{:pregnant} & \uri{:country} & \uri{:vaccinated}\\
+        \midrule
+        \midrule
+        :Max &  $15$ & PEG & male & \(\bot\) & Germany & \(\bot\) \\
+        :Maria & $25$ & & female & \(\top\) & Germany & \(\bot\) \\
+        :Eva & $30$ & & female & \(\bot\) & Germany & \(\top\) \\
+        :Laura & $10$ & PEG & female & \(\bot\) & Germany & \(\bot\) \\
+        \bottomrule
+    \end{tabular}
+    \captionof{table}{Dataset from \ref{fig:motivating_dataset} annotated with the number of contacts with non-vaccinated persons (\#\uri{cw})}
+    \label{fig:example_dataset_person_type_number_of_contacts}
+\end{minipage}
+
+The evaluation of the left-hand side of the constraint is done by executing $\text{validate}(\eta(i),\uri{:PersonShape},G)$ for all $i \in [1,...,9999]$.
+Therefore, $\mathcal{S}$ needs to be validated against $G$ by running a SHACL engine, like the one given in algorithm \ref{algo:shacl_engine}, to give validation results for all $i \in [1,...,9999]$. In this example, it is $[[Q_s]]_G \subseteq [[\uri{TARG}(ts)]]$ as the seed query $Q_s$ equals the target query of the shape $ts$ (see example \ref{Bsp:motivating_example_constraint_definition} and \ref{Bsp:motivating_example_dataset_query}) and, hence, the else case in formula \ref{F:constraint_eval_1} does not occur. Inspection of the table above shows that only the nodes $\uri{:Maria\_j}$ with $j \in [0,...,832]$ will be valid with respect to $\uri{:PersonShape}$, because they are pregnant, live in Germany and have more than $20$ contacts to non-vaccinated persons (e.g., fulfill $\uri{DEF}(\uri{:PersonShape})$).
+
+For the evaluation of the right-hand side, $\phi_{\text{vaccinated}}$ needs to be evaluated for all $x_i$ with $i \in [1,...,9999]$. Hence, $[[\phi_{T}]]_{M_\theta(\mathbf{x}_i)} = 1$ iff $(M_\theta(\mathbf{x}_i) = \top)$. According to the dataset in example \ref{Bsp:sample-to-node_mapping_motivating_example} and the decision tree in Figure \ref{motivating_example_decision_tree}, $\phi_{\text{vaccinated}}$ is true only for the instances $\mathbf{x}_{4167},...,\mathbf{x}_{9166}$, i.e., those that belong to $\uri{:Eva}$. Table \ref{tab:example_constraint_evaluation} includes the summarized evaluation results for each sample in the dataset. 
+
+\captionsetup{type=htypei}
+\begin{minipage}[t]{\linewidth}
+    \vspace{1ex}
+    \centering
+    \begin{tabular}{cl|ccc}
+        \toprule
+        $i$     & $\eta(i)$     & $[[\mathcal{S}\big|_{\uri{:PersonShape}}]]_{G,\eta(i)}$ & $[[\phi_{vaccinated}]]_{M_\theta(\mathbf{x}_i)}$ & $[[C]]_{M_\theta(\mathbf{x}_i), G, \eta(i)}$\\
+        %$\Theta(C,i)$\\
+        \midrule
+        \midrule
+        $1$     & \uri{:Max}\_0 & 0 & 0 & -1\\
+        \vdots  & \multicolumn{1}{c|}{\vdots}    & \vdots & \vdots & \vdots\\
+        $3333$  & \uri{:Max}\_3332 & 0 & 0 & -1\\
+        $3334$  & \uri{:Maria}\_0  & 1 & 0 & 0\\
+        \vdots  & \multicolumn{1}{c|}{\vdots}           & \vdots & \vdots & \vdots\\
+        $4166$  & \uri{:Maria}\_832 & 1     & 0 & 0\\
+        $4167$  & \uri{:Eva}\_0     & 0  & 1 & -1\\
+        \vdots  & \multicolumn{1}{c|}{\vdots}             & \vdots & \vdots & \vdots\\
+        $9166$  & \uri{:Eva}\_4999   & 0 & 1 & -1\\
+        $9167$  & \uri{:Laura}\_0    & 0 & 0 & -1\\
+        \vdots  & \multicolumn{1}{c|}{\vdots}             & \vdots & \vdots & \vdots\\
+        $9999$  & \uri{:Laura}\_832  & 0 & 0 & -1\\
+        \bottomrule
+    \end{tabular}
+    \captionof{table}{Sample-to-node mapping annotated with the (intermediate results of the) constraint evaluation of the example constraint}
+    \label{tab:example_constraint_evaluation}
+\end{minipage}
+\end{Bsp}
+
+Applying $[[C]]_{M_\theta(\mathbf{x}_i), G, \eta(i)}$ to all problem instances $\mathbf{x}_i$ in a dataset $D$ and all constraints $C \in \mathcal{C}$ then yields a constraint validation result for each pair of sample and constraint. This result is recorded by the function defined in the following definition.
+\begin{Def}{Model-Validation-Result Function}{model_validation_result_function}
+Given a set of constraints $\mathcal{C} \subset \mathbf{C}$ and a dataset $D$ with $N$ samples, the model-validation-result function 
+\[\Theta_{M_\theta,D,G,\eta} : \mathcal{C} \times [1,...,N] \to \{1,0,-1\}\]
+maps a constraint $C$ and an index $i$ of a problem instance $\mathbf{x}_i$ in $D$ to the validation result:
+
+\[\Theta_{M_\theta,D,G,\eta}(C,i) \mapsto [[C]]_{M_\theta(\mathbf{x}_i), G, \eta(i)}\]
+
+$\Theta$ assumes a trained machine learning model $M_\theta$, a knowledge graph $G$, and a dataset $D$ with the matching sample-to-node mapping $\eta \in \mathbf{\eta}$. The set of all possible model-validation-result functions is defined as $\mathbf{\Theta}$. If the context is clear, $\Theta$ might be used instead of $\Theta_{M_\theta,D,G,\eta}$.
+\end{Def}
+
+The model-validation-result function tells the user, whether the sample resp. the prediction made by the model is valid (1), or invalid (0) according to the constraint, or the constraint was not applicable (-1) to the sample resp. the prediction. In the context of a constraint as stated in definition \ref{Def:constraint}, the semantics of $\rightsquigarrow$ allows for preserving the evaluation result of the left-hand side of the constraint. That is, a constraint does not apply to a sample, when $ts$ is invalidated explicitly by the property path constraints defined in $\mathcal{S}.\uri{DEF}(ts)$. In the remaining cases, the formula on the right-hand side of the implication determines the validation result. This is in contrast to using the standard Boolean implication:
+
+\begin{Satz}{$\rightsquigarrow$ is closely related to $\rightarrow$}{3valueto2valuelogic}
+Reuse the notation from definition \ref{Def:semantics_constraint_implication} and let $\rightarrow$ be the implication used in Boolean formulas, then for all possible $A$ and $B$ it holds $|[[A \rightsquigarrow B]]_{\alpha,\beta}| = [[A \rightarrow B]]_{\alpha,\beta}$.
+\end{Satz}
+
+The lemma can be used to convert $\Theta$ to use the standard Boolean implication and the 2-valued logic by taking the absolute value of each validation result. The 2-valued version of $\Theta$ is referred by $|\Theta|$ and defined analog to $\Theta$ but maps a constraint and the index of a sample in a dataset as follows:
+
+\begin{gather}
+    \Theta_{M_\theta,D,G,\eta}(C,i) \mapsto \left|[[C]]_{M_\theta(\mathbf{x}_i), G, \eta(i)}\right| \label{formular_two_valued_logic}
+\end{gather}

@@ -1,0 +1,111 @@
+This section is used to summarize the notation used in this work. Therefore, let $A$, $B$ and $C$ be sets; $D$ be a tuple; $f:A \to B$ and $g:B \to C$ arbitrary functions and $a \in \mathbb{R}$ to introduce the mathematical symbols listed in Table \ref{tab:mathematical_symbols}. 
+    
+    \begin{table} [h]
+        \centering
+        \begin{tabular}{l|l}
+             \toprule
+             Symbol & Meaning \\
+             \midrule
+             \midrule
+             $\mathcal{G}_f$ & The Graph $\{(x \mapsto f(x)) \mid x \in A \land f(x) \in B\}$ of $f$\\
+             $\text{dom}(f)$ & The domain $\{x \mid (x \mapsto f(x)) \in \mathcal{G}_f\}$ of $f$\\
+             $\mathcal{P}(A)$ & Power set of $A$\\ 
+             $f \circ g$ & Composition of $f$ and $g$ \\
+             $\emptyset$ & Empty set \\
+             $\text{tuple}$ & A function transforming a set into a tuple with arbitrary order \\
+             $max(A)$ & The maximum $x$ of $A$ where $\forall a \in A ~ (x \geq a)$  \\
+             $min(A)$ & The minimum $x$ of $A$ where $\forall a \in A ~ (x \leq a)$  \\
+             $\text{id}$ & The identity function mapping each instance to itself \\
+             $D[i]$ & The $i$-th element in $D$ \\
+             $|A|$ & Number of elements in $A$ \\
+             $|a|$ & The absolute value of $a$ \\
+             $(a_{i,j})_{\substack{i \in A\\j \in B}}$ & A matrix with elements $a_{i,j}$ and a dimension of $|A| \times |B|$ \\ 
+             $E := A$ & $E$ is assigned $A$, such that $E$ equals $A$ after the operation.\\
+             $f(.)$ & $f$ is marked to be a function of  arity one.\\
+             \bottomrule
+        \end{tabular}        
+        \caption{Mathematical Notation}
+        \label{tab:mathematical_symbols}
+    \end{table}
+
+    Further, this work makes use of several logical expressions. To define what a logical expression is and how it should be interpreted, the concept of languages and structures is used. In this context, a word in the language is a logical expression, which is built according to the predicate logic and interpreted using a given structure $\mathbb{S} = (A; \mathcal{R}; \mathcal{F}; \mathcal{C})$. $A$ is called the carrier of the structure and provides the set of available values for variables. $\mathcal{R}$ is the set of relations, $\mathcal{F}$ is the set of functions, and $\mathcal{C}$ is the set of constants. All the syntactically correct words, which are built according to the predicate logic with the symbols, relations, and functions provided by $\mathbb{S}$ are contained in the language, which is denoted by $\mathcal{L}_{\mathbb{S}}$.
+
+    Semantically, the symbols used in this work have the usual meaning, if not defined otherwise. In this thesis, the logical expressions do not involve quantification, therefore, variables can only occur unbound. 
+    A logical expression $\sigma \in \mathcal{L}_{\mathbb{S}}$ can be evaluated via $\mathcal{I} \models \sigma$ the logical true ($\top$) or false ($\bot$), where $\mathcal{I}$ is an interpretation. An interpretation is a tuple $(\mathbb{S}, \beta)$, where $\beta$ is a partial function assigning values from the carrier $A$ to the available variables.
+    
+    To distinguish between this kind of evaluation and the evaluation of other kinds of expressions $\upsilon$, the second kind uses the Scott brackets $[[\upsilon]]_\theta^\lambda$ for evaluation with various parameters $\theta$ and $\lambda$. One can think of it as asking, whether $\theta$ in combination with $\lambda$ models $\upsilon$.
+    Table \ref{tab:logical_symbols} summarizes the notation explained.
+   
+    \begin{table}[h]
+        \centering
+            \begin{tabular}{l|l}
+             \toprule
+             Symbol & Meaning\\
+             \midrule
+             \midrule
+             $[[\upsilon]]_\theta^\lambda$ & The evaluation of $\upsilon$ given $\theta$ and $\lambda$ (Scott brackets)\\
+             $var(\sigma)$ & Function to retrieve \textit{all kind of} variables in $\sigma$\\
+             $\mathcal{I} \models \sigma$ & $\mathcal{I}$ models $\sigma$ (semantic entailment)\\
+             $\top$ & Logical true equivalent to $1$\\
+             $\bot$ & Logical false equivalent to $0$\\
+             $\phi[a / b]$ & $\phi$ but $b$ is replaced with $a$\\
+             \bottomrule
+        \end{tabular}        
+        \caption{Logical Symbols}
+        \label{tab:logical_symbols}
+    \end{table}
+    
+    As a reference for the reader, Table \ref{tab:infinite_sets} shows the infinite sets defined in this work:
+
+    \begin{table}[h]
+        \centering
+        \begin{tabular}{l|l|l}
+             \toprule
+             Symbol & Meaning & Definition \\
+             \midrule
+             \midrule
+             $\mathbf{I}$ & Infinite set of IRIs & \ref{Def:rdf_iri}\\
+             $\mathbf{L}$ & Infinite set of literals & \ref{Def:rdf_literal}\\
+             $\mathbf{B}$ & Infinite set of blank nodes & \ref{Def:rdf_blank_node}\\
+             $\mathbf{G}$ & Infinite set of knowledge graphs & \ref{Def:knowledge_graph}\\
+             $\mathbf{V}$ & Infinite set of query variables & \ref{Def:sparql_variable}\\
+             $\mathbf{T}$ & Infinite set of triple patterns & \ref{Def:sparql_triple_pattern}\\
+             $\mathbf{M}$ & Infinite set of SPARQL solution mappings & \ref{Def:sparql_solution_mapping}\\
+             $\mathbf{P}$ & Infinite set of graph patterns & \ref{Def:sparql_graph_pattern}\\
+             $\mathbf{Q}$ & Infinite set of SPARQL \uri{SELECT} queries & \ref{Def:sparql_query}\\
+             $\overrightarrow{\mathbf{P}}$ & Infinite set of property paths & \ref{Def:shacl_property_path}\\
+             $\mathbf{C_P}$ & Infinite set of property path constraints & \ref{Def:shacl_constraint}\\
+             $\mathbf{Q_T}$ & Infinite set of target queries & \ref{Def:shacl_target_query}\\
+             $\mathbf{S}$ & Infinite set of shapes & \ref{Def:shacl_shape_schema}\\
+             $\mathbf{SN}$ & Infinite set of shape schemas & \ref{Def:shacl_shape_schema}\\
+             $\boldsymbol{\eta}$ & Infinite set of sample-to-node mappings & \ref{Def:sample_to_node_mapping}\\
+             $\mathbf{C}$ & Infinite set of constraints & \ref{Def:constraint}\\
+             $\mathbf{\Theta}$ & Infinite set of model-validation-result functions & \ref{Def:model_validation_result_function}\\
+             $\mathbf{E}$ & Infinite set of explanation mappings & \ref{Def:valSPARQL_explanation} \\
+             $\mathbf{\Gamma}$ & Infinite set of grouping functions & \ref{Def:frequency_distribution_creation_function}\\
+             \bottomrule
+        \end{tabular}        
+        \caption{Infinite Sets}
+        \label{tab:infinite_sets}
+    \end{table}
+    
+    Some usual namespaces (the meaning of a namespace is defined in section \ref{background_rdf}) used in this work are defined in Table \ref{tab:namespaces} to shorten the examples, which make use of these namespaces.  
+    
+    \begin{table}[h]
+        \centering
+            \begin{tabular}{l|l}
+                 \toprule
+                 Prefix & Namespace\\
+                 \midrule
+                 \midrule
+                  & \uri{http://example.org/}\\
+                 xsd & \uri{http://www.w3.org/2001/XMLSchema\#}\\
+                 rdf & \uri{http://www.w3.org/1999/02/22-rdf-syntax-ns\#}\\
+                 sh & \uri{http://www.w3.org/ns/shacl\#}\\
+                 \bottomrule
+            \end{tabular}        
+            \caption{Prefixes and their associated namespaces}
+        \label{tab:namespaces}
+    \end{table}
+    
+    Finally highlighting is used in pseudocode and when reporting implementation details for the ease of reading. The following concepts are formatted as their counterparts will be in the thesis: \textsc{Module}, \emph{Class}, instances, ``paramters'', ``functions'', \textbf{pseudocodeFunction}, \textit{pseudocode\_variable} and \uri{:ressourceIdentifier}.

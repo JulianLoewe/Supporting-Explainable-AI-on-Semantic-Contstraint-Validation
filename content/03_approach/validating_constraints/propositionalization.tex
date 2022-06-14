@@ -1,0 +1,107 @@
+
+    Most machine learning algorithms that train machine learning models demand a propositional form of the input data. This is the kind of data matching the definition \ref{Def:dataset}. Each sample is associated with a number of features and a target, given that it is not an unsupervised algorithm. Hence, the goal is to generate a dataset given a knowledge graph and, in parallel, create the needed sample-to-node mapping by tracking the generation process. There is already some work tackling the first part of the goal by using user-defined SPARQL queries \cite{cheng2011automated,narasimha2011liddm}. A recent paper even proposed a generic distributed framework that can generate these kinds of queries automatically \cite{moghaddam2021literal2feature}. Since this procedure has proven itself and is also suitable for extracting the required mapping, SPARQL queries are used here for propositionalization. In this work, the user is required to provide the query. Nevertheless, a framework like the one in \cite{moghaddam2021literal2feature} can be used as long as it generates queries as specified below. To get started, the following provides the components used to specify the query. 
+    First, the user must decide on a corpus of entities, making predictions about \cite{cheng2011automated}. 
+    \begin{Def}{Set of Seed Nodes}{seed_nodes}
+        The set of seed nodes $\mathbf{s} \subset \mathbf{I} \cup \mathbf{B}$ represents the corpus of entities a user wishes to make predictions about. 
+    \end{Def}
+    
+    Each seed node represents a starting point in the knowledge graph from which one or more samples will be extracted. Similar to the notion of a target query, which retrieves target instances to be checked against a shape, one can define a \emph{seed query} $Q_s$, which gives, when executed over a knowledge graph, the set of seed nodes to be used to construct the dataset.
+
+    \begin{Def}{Seed Query}{seed_query}
+    Given a set of seed nodes $\mathbf{s} \subset \mathbf{I} \cup \mathbf{B}$ and a knowledge graph $G \in \mathbf{G}$, a seed query $Q_s \in \mathbf{Q}$ is a SPARQL query with $[[Q_s]]_G = \mathbf{s}$ and $|\text{dom}([[Q_s]]_G)| = 1$.
+    \end{Def}
+    
+    The infinite set of seed queries equals the infinite set of target queries $\mathbf{Q_T}$. 
+    
+    To connect a seed node with a node representing a feature, property paths are needed. Therefore, one must choose $K$ property paths $p_1,p_2,...,p_K \in \overrightarrow{\mathbf{P}}$. Each property path $p_j$ connects a seed node $s_i$ to the corresponding feature value $x_{i,j}$ extracted from the knowledge graph. In the case of a supervised algorithm, an additional path $p_{t_i} \in \overrightarrow{\mathbf{P}}$ is needed to connect the seed node $s_i$ with the corresponding target value $t_i$.
+    
+    Finally, the concept of a seed query and the concept of property paths need to be combined to build a dataset constructing SPARQL query $Q_D$. In definition \ref{Def:sparql_graph_pattern} the \uri{SELECT} query as defined in definition \ref{Def:sparql_query} is listed as a graph pattern, which allows the usage of nested queries in SPARQL. Therefore, the seed query can be integrated as a nested query into $Q_D$. Furthermore, a property path can be seen as a shorthand for a more complicated graph pattern. This becomes evident in definition \ref{Def:shacl_property_path}. Each recursive component of a property path can be evaluated using the algebraic operations over sets of solutions mappings. 
+    Here, a property path is used as an in-place operation between two variables. These variables replace the variables $\text{?s}_p$ and $\text{?e}_p$ in the definition \ref{Def:shacl_property_path}. The variable on the left-hand side of the property path refers to, $\text{?s}_p$ and the variable on the right-hand side to $\text{?e}_p$.
+    
+    \begin{Bsp}{Using Property Paths and Nested Queries as Graph Patterns}{}
+    In the motivating example, one might be interested in all the pairs of people, who are related to each other and the first person is constrained to be not vaccinated. Here two persons are related to each other, when there is a path in the knowledge graph connecting them and the path consists of a maximum of two edges labeled with \uri{:contact\_with}.
+    
+    Let $\mathcal{r}$ be the identity function; mapping each variable to itself.
+    First, a query to extract non-vaccinated persons is defined 
+    \begin{align*}
+        Q_\text{not vaccinated} = \text{\uri{SELECT}(?x,$\mathcal{r}$,} & \text{((?x, \uri{rdf:type}, \uri{:Person})}\\ 
+        & \text{\uri{AND} (?x, \uri{:vaccinated}, \uri{False}))}
+    \end{align*} 
+    Next, two property paths are needed to express the concept of paths connecting two persons via edges labeled with \uri{:contact\_with}.
+    \begin{align*}
+        p_1 & := \uri{:contact\_with} \\
+        p_2 & := p_1 / p_1
+    \end{align*}
+    $p_1$ is a predicate path and $p_2$ a sequence path consisting of two predicate paths.
+    Now the full query can be specified:
+    \begin{align*}
+        \text{\uri{SELECT}(\{?x,?y\},$\mathcal{r}$, (} & \text{($Q_\text{not vaccinated}$ \uri{AND} (?x, $p_1$, ?y)) \uri{UNION}}\\ 
+        & \text{($Q_\text{not vaccinated}$ \uri{AND} (?x, $p_2$, ?y)))}
+    \end{align*}
+    \end{Bsp}
+    
+    There might be seed nodes $s_i$ for which a property path $p_j$ does not lead to a feature value $x_{i,j}$ in a knowledge graph $G$ because $\forall f \in \mathbf{B} \cup \mathbf{I} ~ (s_i, f) \not\in [[p_j]]_G$. Therefore, the dataset may contain empty entries in the case of some samples, and $Q_D$ has to use the $\uri{OPT}$ graph pattern for each property path referring to a feature. Hence, a sample including an empty entry will not be discarded. Therefore, the SPARQL query $Q_D$ can be built as follows:
+    \begin{align}
+        \text{\uri{SELECT}(\{$\text{?x},\text{?f}_1,...,\text{?f}_K$\}, $\mathcal{r}$, ($Q_s$ \uri{AND} $\substack{\uri{\Large OPT}\\j \in [1,...,K]}$ (?x, $p_j$, $\text{?f}_j$)))} \label{datset_generating_query_pattern}
+    \end{align}
+    An additional optional graph pattern using $p_{t_i}$ must be used when building a dataset for a supervised algorithm.
+
+    \begin{Bsp}{Query used to Generate the Motivating Example Dataset}{motivating_example_dataset_query}
+    There is already a dataset given in the motivating example (see Figure \ref{fig:motivating_dataset}), which was extracted from a knowledge graph like the one in Figure \ref{fig:motivating_example_kg}. Here the goal is to specify how the dataset was extracted using a SPARQL query $Q_D$, which has the form shown as a graph pattern above.
+    First, a seed query is needed. In the case of the motivating example, one is interested in the corpus of persons and the seed query. Therefore, one needs to extract all entities of type person.
+    \begin{gather*}
+        Q_s = \text{\uri{SELECT}(?x,$\mathcal{r}$, (?x, \uri{rdf:type}, \uri{:Person}))}
+    \end{gather*}
+    As the knowledge graph is kept simple, the property paths leading to the features as well as the target are predicate paths:
+    \begin{gather*}
+        \text{\uri{:allergic\_to}},\text{\uri{:gender}}, \text{\uri{:pregnant}}, \text{\uri{:country}}, \text{\uri{:vaccinated}} \in \overrightarrow{\mathbf{P}}
+    \end{gather*}
+    
+    Finally, the query can be specified using the SPARQL syntax.
+    
+        \lstset{language=SQL, morekeywords={PREFIX, rdf,OPTIONAL}}
+        \begin{lstlisting}[captionpos=b, caption=SPARQL query to generate the motivating example dataset, label=lst:generating_sparql_query_motivating_example, basicstyle=\ttfamily, frame=single]
+        PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>    
+        PREFIX : <http://example.org/>
+        SELECT ?x ?allergic_to ?gender ?pregnant ?country ?vaccinated 
+        WHERE {
+            ?x rdf:type :Person .
+            OPTIONAL{ ?x :allergic_to ?allergic_to }
+            OPTIONAL{ ?x :gender ?gender }
+            OPTIONAL{ ?x :pregnant ?pregnant }
+            OPTIONAL{ ?x :country ?country }
+            OPTIONAL{ ?x :vaccinated ?vaccinated }
+        }
+        \end{lstlisting}
+    \end{Bsp}
+    
+    The kind of query $Q_D$ presented here already comprises the seed query. Therefore, when evaluating $Q_D$ against a knowledge graph, each solution mapping represents a sample annotated with the corresponding \emph{seed node}. The transformation from a tuple of solution mappings to a dataset and a sample-to-node mapping is given below:
+    \begin{Def}{Transforming a Tuple of Solution Mappings into a Dataset and a Sample-to-node Mapping}{transforming_tuple_to_dataset}
+    Given a task $(\mathbb{I}, \mathbb{T}, ot(.))$, the function $\mathbb{f}: \mathbf{M}^N \times \mathbf{V} \to (\mathbb{I} \times \mathbb{T})^N \times \boldsymbol{\eta}$ transforms a given tuple of solution mappings $\Omega$ of length $N \in \mathbf{N}$ and a variable ?t specifying the target (if there is one, \glqq None\grqq{} otherwise) into a dataset and a sample-to-node mapping. This only requires that for each solution mapping $\mu \in \Omega$ it's $\text{?x} \in \text{dom}(\mu)$ and $\mu(?x) \in \mathbf{I} \cup \mathbf{B}$ gives the seed node of the solution mapping.
+    \begin{align*}
+        \mathbf{x}_i := & (\mu(?v) \mid \mu = \Omega[i] \land ?v \in \text{dom}(\mu) \setminus \{?x,?t\})\\
+        \mathbb{f}(\Omega, ?t)[1] \mapsto & \begin{cases} 
+                                                ((\mathbf{x}_i,\underbrace{\Omega[i](?t)}_{t_i}) \mid i \in [1,...,N]) & \text{?t} \neq \text{None}\\ 
+                                                (\mathbf{x_i} \mid i \in [1,...,N]) & \text{else} \end{cases}  \\ 
+        \mathbb{f}(\Omega, ?t)[2] \mapsto & \{ (i \mapsto \Omega[i](?x))\mid i \in [1,...,N]\}
+    \end{align*}
+    If ?t is not \glqq None\grqq{}, then for all $\mu \in \Omega$ it's $\text{?t} \in \text{dom}(\mu)$.
+    \end{Def}
+    As one can observe, the dataset generating query $Q_D$ can also be of other forms deviating from \ref{datset_generating_query_pattern}. For example, the query can use groupings and aggregations (see \cite{sparql1on1}) as long as the requirements of the previous definition are fulfilled.
+    
+    \begin{Def}{A Dataset Generating Query}{}
+    Given a dataset $D$ and a knowledge graph $G$, a dataset generating query $Q_D$ is the one, which evaluates to a set of solution mappings $\Omega := [[Q_D]]_G$, such that $\text{tuple}(\Omega)$ fulfills the requirements in definition \ref{Def:transforming_tuple_to_dataset} and $\mathbb{f}(\Omega, ?t)[1] = D$.
+    \end{Def}
+    
+    The dataset and the sample-to-node mapping can now be constructed depending on the machine learning algorithm. If it is an unsupervised algorithm, and a knowledge graph $G$ and a dataset generating query $Q_D$ are given, then the dataset $D$ and the sample-to-node mapping are constructed as follows:
+    \[(D, \eta) = \mathbb{f}(\text{tuple}([[Q_D]]_G), \text{None})\]
+    If the algorithm is a supervised algorithm, the variable for target identification ?t is required additionally:
+    \[(D, \eta) = \mathbb{f}(\text{tuple}([[Q_D]]_G), ?t)\]
+    
+    In both cases, the sample-to-node mapping generated has as domain the original set of seed nodes chosen by the user as corpus of entities to make predictions about (e.g., given $G \in \mathbf{G}$, $Q_s \in \mathbf{Q_T}$, $\mathbf{s} := [[Q_s]]_G$ and the dataset extracting query $Q_D \in \mathbb{Q}$ comprises $Q_s$, the extracted sample-to-node mapping $\eta$ it will full fill $\text{dom}(\eta) = \mathbf{s}$)
+    
+    \begin{Bsp}{Creating the Motivating Example dataset}{creating_the_motivating_example_dataset}
+    As all the components to create the dataset from the motivating example are ready, that is, the knowledge graph $G$ (see Figure \ref{fig:motivating_example_kg}) and the dataset generating query $Q_D$ (see example \ref{Bsp:motivating_example_dataset_query}), the dataset $D$ (see Figure \ref{fig:motivating_dataset}) and the matching sample-to-node mapping $\eta$ (see example \ref{Bsp:sample-to-node_mapping_motivating_example}) can be created by executing:
+    \[(D, \eta) = \mathbb{f}(\text{tuple}([[Q_D]]_G), ?vaccinated)\]
+    \end{Bsp}
+    This concludes the section, as the goal of generating a dataset from a knowledge graph while creating the required sample-to-node mapping has been achieved. 

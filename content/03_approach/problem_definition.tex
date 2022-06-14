@@ -1,0 +1,103 @@
+
+The problem approached in this thesis is twofold. The first part is to validate constraints over machine learning models while using the semantic context of the entities in an underlying knowledge graph. The second part is to use the validation results to make the machine learning model better interpretable or even explainable. The following two sections present these two problems formally using the motivating example.
+
+\subsection{Validating Constraints over Machine Learning Models}
+To be able to use the semantic context of the entities provided in a knowledge graph to validate a machine learning model against a set of constraints, a validation engine is needed. The validation engine needs to connect the information provided by the knowledge graph and the predictions a machine learning model makes based on samples. To do so, the problem of constraint validation for machine learning models is narrowed down to the case, in which a mapping between the samples in the dataset and the nodes in the knowledge graph exists. The mapping will be called sample-to-node mapping and is defined as follows:
+
+\begin{Def}{Sample-to-node Mapping}{sample_to_node_mapping}
+Given a dataset $D$ for a specific task with $N \in \mathbb{N}$ samples and a knowledge graph $G$, a sample-to-node mapping is a total function \[\eta: [1,...,N] \to (\mathbf{B} \cup \mathbf{I}) \cap V_G\] mapping a sample to an IRI or a blank node in $G$.
+The infinite set of sample-to-node mappings is given by $\boldsymbol{\eta}$
+\end{Def}
+
+At this point, it is important to recognize that $\eta$ does not make any restrictions on the dataset and their assigned nodes in the knowledge graph. On the left-hand side of the function, the indices of the dataset are used to allow duplicates in the dataset (e.g., required for oversampling \cite{imblearn}). This is in contrast to using $\mathbb{I} \times \mathbb{T}$ on the left, which would not allow duplicates to be used.
+In addition, $\eta$ enables a node in the knowledge graph to be associated with several or no samples.
+The knowledge graph connected through $\eta$ with the dataset is referred to by \emph{underlying knowledge graph}.
+
+\begin{Bsp}{The Function $\eta$ used in the Motivating Example}{sample-to-node_mapping_motivating_example}
+This example refers to the dataset in Figure \ref{fig:motivating_dataset} and the underlying knowledge graph in Figure \ref{fig:motivating_example_kg}.
+In the motivating example, the dataset consists of a set of person types (the person column). For each person type, various features (representing the problem instance) and the vaccination status (representing the target) are defined. Additionally, the overall ratio (the weight column) of this type of person in the whole dataset is given. Assuming a dataset of $N = 9999$ examples as in Figure \ref{motivating_example_annotated_decision_tree}, there will be $\frac{1}{12} * 9999 \approx 833$ examples of the type \uri{:Maria}. Each example is then mapped to a node in the underlying knowledge graph. The same procedure is applied to the other types of persons.
+
+That is what $\eta$ does for each example in the dataset. Table \ref{tab:example_dataset_annotated_with_sample_to_node_mapping} shows the complete sample-to-node mapping and the corresponding problem instances and targets.
+\captionsetup{type=htypei}
+\begin{minipage}[t]{\linewidth}
+    \vspace{1ex}
+    \centering
+    \begin{tabular}{c|cccc|c||l}
+        \toprule
+        $i$     & \multicolumn{4}{c|}{$\mathbf{x}_i$}        & $t_i$         & $\eta(i)$     \\
+                & allergic\_to          & gender        & pregnant  & country   & vaccinated    &               \\
+        \midrule
+        \midrule
+        $1$     & PEG                   & male          & \(\bot\)  & Germany   & \(\bot\)      & \uri{:Max}\_0 \\
+        \vdots  & \vdots                & \vdots        & \vdots    & \vdots    & \vdots        & \multicolumn{1}{c}{\vdots}        \\
+        $3333$  & PEG                   & male          & \(\bot\)  & Germany   & \(\bot\)      & \uri{:Max}\_3332 \\
+        $3334$  &                       & female        & \(\top\)  & Germany   & \(\bot\)      & \uri{:Maria}\_0 \\
+        \vdots  &                       & \vdots        & \vdots    & \vdots    & \vdots        & \multicolumn{1}{c}{\vdots}      \\
+        $4166$  &                       & female        & \(\top\)  & Germany   & \(\bot\)      & \uri{:Maria}\_832 \\
+        $4167$  &                       & female        & \(\bot\)  & Germany   & \(\top\)      & \uri{:Eva}\_0 \\
+        \vdots  &                       & \vdots        & \vdots    & \vdots    & \vdots        & \multicolumn{1}{c}{\vdots}       \\
+        $9166$  &                       & female        & \(\bot\)  & Germany   & \(\top\)      & \uri{:Eva}\_4999 \\
+        $9167$  & PEG                   & female        & \(\bot\)  & Germany   & \(\bot\)      & \uri{:Laura}\_0 \\
+        \vdots  & \vdots                & \vdots        & \vdots    & \vdots    & \vdots        & \multicolumn{1}{c}{\vdots}        \\
+        $9999$  & PEG                   & female        & \(\bot\)  & Germany   & \(\bot\)      & \uri{:Laura}\_832\\
+        \bottomrule
+    \end{tabular} 
+    \captionof{table}{The Dataset Extracted from Figure \ref{fig:motivating_dataset} and \ref{fig:motivating_example_kg} Annotated with the Sample-to-node Mapping}
+    \label{tab:example_dataset_annotated_with_sample_to_node_mapping}
+\end{minipage}
+\end{Bsp}
+
+Given the index $i \in [1,...,N]$ of a sample $(\mathbf{x}_i, t_i)$ in a dataset $D$, $\eta$ maps the index to a node $v \in \mathbf{B} \cup \mathbf{I}$ of a knowledge graph. During inference, a trained machine learning model $M_\theta$ transforms the problem instance $\mathbf{x}_i$ into a prediction $M_\theta(\mathbf{x}_i)$ for the target. These two steps connect the entities or nodes in the knowledge graph to the prediction a machine learning model makes based on them. The next step is to use the semantic context of the entities and the corresponding predictions in the form of constraints.
+
+A constraint will be defined similarly to an implication used in Boolean formulas. In general, a Boolean implication (e.g., $A \rightarrow B$ where $A$ and $B$ are Boolean formulas) consists of a condition (i.e., $A$) and a restriction (i.e., $B$), getting active when the condition applies. Regarding the validation engine, the left-hand side (i.e., $A$) of the constraint will be a shape schema with a target shape, describing a condition on the entities found in the knowledge graph. This is done according to the W3C recommendation in the SHACL language \cite{knublauch2017shapes} and allows using the semantic context of the entities in the knowledge graph. The right-hand side of the implication (i.e., $B$) then allows for restrictions of the target prediction of the machine learning model depending on the condition. The structure of the constraint allows to generate explanations in specific cases: If the condition applies and the target prediction is according to the restrictions, then the restrictions can be used as an explanation for the target prediction ($B$ might be true because of a $A$).
+
+\begin{Def}{Constraint}{constraint}
+A constraint $C$ is composed of a shape schema $\mathcal{S} = (S, \uri{TARG}, \uri{DEF})$ as defined in definition \ref{Def:shacl_shape_schema} ($\mathcal{S} \in \mathbf{SN}$), a shape $ts \in S$ (called target shape) and a logical expression $\phi_T$ with only the $T$ as a free variable. $T$ is the placeholder for the predicted target of the machine learning model, to be validated. $C$ is serialized as follows:
+\begin{gather*}
+        \mathcal{S}\big|_{ts} \rightsquigarrow \phi_{T}
+\end{gather*}
+where $\rightsquigarrow$ is a symbol for a binary operator\footnote{The semantics of the constraint will be defined in section \ref{section_evaluating_constraints}}.
+The components of $C$ can be accessed with $C.\mathcal{S}$, $C.ts$ and $C.\phi_{T}$. The infinite set of constraints is defined to be $\mathbf{C}$.
+\end{Def}
+
+Until the semantic of the $\rightsquigarrow$ is formally defined, the reader should translate it with ``is a requirement for''. 
+
+\begin{Bsp}{An Example Constraint}{motivating_example_constraint_definition}
+In the introduction, the constraint \glqq{}\emph{Every pregnant person in Germany, which has more than 20 contacts to non-vaccinated persons should get vaccinated}\grqq{} was formulated and will now be transformed into the form defined above. The constraint can clearly be expressed in the form of an implication having a set of conditions on the node found in the knowledge graph on the left-hand side (e.g., the person lives in Germany, is pregnant, and has more than 20 contacts with non-vaccinated persons) and a Boolean expression about the target (e.g., the person has to be vaccinated) on the right-hand side.
+
+First, the necessary condition on the node is defined. Therefore, the abstract notation from section \ref{background_shacl} is used to define the shape schema $\mathcal{S} = (S, \uri{TARG}, \uri{DEF})$.
+\begin{align*}
+    S = ~ & \{\uri{:PersonShape}, \uri{:NotVaccinatedPersonShape}\}\\
+    \uri{DEF}(\uri{:PersonShape}) = ~ & (\geq_1 \uri{:pregnant.True}) ~\land~ (\geq_1 \uri{:country.Germany})~ \land\\ 
+                                      & (\geq_{21} \uri{:contact\_with.:NotVaccinatedPersonShape})\\
+    \uri{DEF}(\uri{:NotVaccinatedPersonShape}) = ~ & (\geq_1 \uri{:vaccinated.False})
+\end{align*}
+    \lstset{language=html}
+    \begin{lstlisting}[captionpos=b, caption=\uri{TARG}(\uri{:PersonShape}) and \uri{TARG}(\uri{:NotVaccinatedPersonShape}), basicstyle=\ttfamily, frame=single]
+    PREFIX : <http://example.org/>
+    SELECT ?x WHERE {
+        ?x a :Person
+    }
+    \end{lstlisting}
+
+When evaluating the shape schema against the knowledge graph to validate the constraint, $\uri{:PersonShape}$ defines the condition based on $\uri{:NotVaccinatedPersonShape}$. Therefore, the target shape is $\uri{:PersonShape}$ and in case that a node is valid according to the target shape the corresponding target prediction of the machine learning model should be according to \[\phi_{\text{vaccinated}} = (\text{vaccinated} = \top)\]
+
+Hence, the final constraint is \[\mathcal{S}\big|_{\uri{:PersonShape}} \rightsquigarrow \phi_{\text{vaccinated}}\]
+\end{Bsp}
+
+Given the definition of the sample-to-node mapping (definition \ref{Def:sample_to_node_mapping}) and the constraint (definition \ref{Def:constraint}), to be validated over a machine learning model and the underlying knowledge graph, the problem can be formulated. 
+
+\begin{Satz}{The Limited Problem of Validating Constraints over Machine Learning Models}{problem_validating_constraints_over_ai_model}
+The input of the problem of validating constraints over machine learning models is a 5-tuple $(\mathcal{C}, M_\theta, D, G, \eta)$ where $\mathcal{C} \subset \mathbf{C}$ a set of constraints, $M_\theta$ a machine learning model with parameters $\theta$, $D$ a dataset according to definition \ref{Def:dataset}, $G \in \mathbf{G}$ and $\eta \in \boldsymbol{\eta}$ a sample-to-node mapping. Given a sample-to-node mapping $\eta$, the problem is to efficiently evaluate each constraint $C \in \mathcal{C}$ for each sample indexed with $[1,...,N]$ over the machine learning model $M_\theta$ and the knowledge graph $G$.
+\end{Satz}
+
+\subsection{Constraint-based Explanations}
+The problem addressed in this thesis goes one step further than validating a set of constraints as described in lemma \ref{S:problem_validating_constraints_over_ai_model}. Another goal is to use the knowledge gained through the validation to make the model behavior more evident to humans. This happens according to the definition of explainable resp. interpretable AI: ``[...] produce agents, whose behavior can be understood by humans [...]'' resp. ``[...] describe the internals of a system in a way that is understandable to humans'' and leads to a model, producing predictions that can be trusted by the user (see chapter \ref{background_explainable_ai}).
+
+When using the validation results of the user-defined constraints, the goal is to summarize the validation results so that they can be combined with the patterns used by the machine learning model. Therefore, when talking about explaining a model in the context of constraint validation in this thesis, it refers to the following definition of the problem.
+
+\begin{Satz}{The Problem of Explaining Machine Learning Model Behavior using Constraint Validation Results}{problem_explaining_ai_model_with_constraints}
+Given the validation results for each constraint $C \in \mathcal{C} \subset \mathbf{C}$ for each sample in the dataset $D$, indexed with $[1,...,N]$, over the machine learning model $M_\theta$, the problem is to summarize the knowledge gained in such a way, that the behavior of $M_\theta$ gets more apparent to the user. 
+\end{Satz}
+
+

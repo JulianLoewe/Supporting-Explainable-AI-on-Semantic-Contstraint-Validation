@@ -1,0 +1,77 @@
+RDF -- short for Resource Description Framework -- is a data model used to describe resources on the web. Originally, RDF was mainly used for metadata of web resources but was then extended to a general machine-interpretable exchange format to encode structured information. Nowadays, RDF has become the W3C standard for publishing and exchanging structured data over the web. The concepts and the abstract syntax presented in this section are taken from \cite{world2014rdf}, unless stated otherwise. The following builds up the concepts of RDF in a bottom-up fashion.
+
+When talking about something in the world in the context of the web, there are two main types of things called resources. First, there are entities that need to be described uniquely in a global context. These types of resources are assigned an IRI.
+
+\begin{Def}{IRI}{rdf_iri}
+IRIs (\glqq{}Internationalized Resource Identifier\grqq{}) are a super set of URIs (\glqq{}Unique Resource Identifier\grqq{}), which additionally allow the use of Unicode characters, while identifying resources uniquely. Generally, they are structured hierarchical \cite{berners1998rfc2396}:
+\begin{center}
+    \uri{<scheme>://<authority><path>?<query>\#<fragment>}
+\end{center}
+The infinite set of all possible IRIs is denoted by $\mathbf{I}$.
+\end{Def}
+
+A collection of IRIs used in this context is called an RDF vocabulary. Additionally, a set of IRIs with a common prefix \uri{pre} followed by an arbitrary local part \uri{post} can be abbreviated by defining an RDF namespace \uri{n}. Leading to the shorthand \uri{n:post} to be used for the IRI, which is the concatenation of \uri{pre} and \uri{post}.
+
+\begin{Bsp}{RDF build-in vocabulary}{rdf_vocabulary}
+    The built-in RDF vocabulary is a set of IRIs, which, for instance, include the definition of the essential data types. A data type needs to be identified uniquely and, therefore, gets a unique IRI assigned.
+    For example, the data type string has the following IRI.
+    \begin{center}
+        \uri{http://www.w3.org/1999/02/22-rdf-syntax-ns\#langString}
+    \end{center}
+    Clearly, the IRI can be decomposed into the parts mentioned in definition \ref{Def:rdf_iri}.
+    Another IRI belonging to the same vocabulary is used to state that an entity is of a specific class:
+    \begin{center}
+        \uri{http://www.w3.org/1999/02/22-rdf-syntax-ns\#type}
+    \end{center}
+    Both IRIs have the common prefix:
+    \begin{center}
+        \uri{http://www.w3.org/1999/02/22-rdf-syntax-ns\#}
+    \end{center}
+    Usually, \uri{rdf} is chosen as a shorthand so that the IRIs can be shortened to \uri{rdf:langString} and \uri{rdf:type}.
+\end{Bsp}
+
+Secondly, there might be things like values, dates and items (e.g., items with a data type) defined. These may be used in different contexts without referring to the same thing and are called literals.
+
+\begin{Def}{Literal}{rdf_literal}
+A literal consists of a Unicode string and a data type IRI, as mentioned in example \ref{Bsp:rdf_vocabulary}. Further, if the data type is \uri{rdf:langString}, then a language tag should be defined.
+The infinite set of all possible literals is denoted by $\mathbf{L}$.
+\end{Def}
+
+Literals, IRIs, and a third concept named blank nodes are called RDF terms.
+Though, there may be string literals, which are also used as IRI, the entities denoted with these concepts are distinct and distinguishable, which means that a literal can never be mixed up with an IRI or a blank node.
+
+\begin{Def}{Blank Node}{rdf_blank_node}
+A blank node is disjoint from the concept of literals and IRIs. Apart from that, the set of blank nodes is arbitrary, and an identifier of a blank node may only be unique in a local representation.
+The infinite set of all possible blank nodes is denoted by $\mathbf{B}$.
+\end{Def}
+
+RDF is a graph-based data model. The goal of using the RDF terms as building blocks is to encode structured information. RDF triples are used to represent the information in the form of facts about resources. 
+
+\begin{Def}{RDF triple}{rdf_triple}
+A triple $(s,p,o)$ is called an RDF triple, iff $s \in \mathbf{I} \cup \mathbf{B}$, $p \in \mathbf{I}$ and $o \in \mathbf{I} \cup \mathbf{L} \cup \mathbf{B}$.
+The three components of the triple are called subject $s$, predicate $p$, and object $o$.
+\end{Def}
+
+A set of triples (i.e., facts about resources) can then be combined into an RDF graph, which is defined as follows:
+
+\begin{Def}{RDF graph}{rdf_graph}
+An RDF graph $G$ is a set of RDF triples as defined in definition \ref{Def:rdf_triple}.
+\end{Def}
+
+Given the definition, it is clear that an RDF graph $G \subset (\mathbf{I} \cup \mathbf{B}) \times \mathbf{I} \times (\mathbf{I} \cup \mathbf{L} \cup \mathbf{B})$ can also be understood as a representation of a labeled directed graph \cite{corman2019validating}, which is the statement of the following lemma.
+
+\begin{Satz}{Two representations for an RDF graph}{rdf_conversion_directed_labeled_graph}
+An RDF graph $G_1$ as defined in definition \ref{Def:rdf_graph} is equivalent to the representation of a labeled directed graph $G_2 = (V_G,E_G)$ where $V_G \subset \mathbf{I} \cup \mathbf{L} \cup \mathbf{B}$ are the vertices and $E_G \subseteq V_G \times \mathbf{I} \times V_G$ are the edges between nodes of $V_G$ labeled with predicates of $\mathbf{I}$.
+\end{Satz}
+\begin{proof}
+To show the equivalence, the conversion from $G_1$ to $G_2$ and vice versa needs to be shown.
+Converting $G_1$ into $G_2$ is a matter of setting $V_G = \{s \mid (s,p,o) \in G_1\} \cup \{o \mid (s,p,o) \in G_1\}$ and $E_G = G_1$. The reverse has to be done by setting $G_1 = E_G$, such that two nodes $s$ and $o$ are connected with a directed edge $(s,p,o) \in E_G$, if there is a triple $(s,p,o)$.
+\end{proof}
+
+A labeled directed graph $G = (V_G, E_G)$, created as above, can be visualized as shown in Figure \ref{fig:motivating_example_kg}. To distinguish literals from the other nodes, they are drawn rectangular, while the other nodes are drawn round. A blank node, therefore, would be an empty round node. Here, a knowledge graph is defined as a labeled directed graph.
+
+\begin{Def}{Knowledge Graph \cite{corman2019validating}}{knowledge_graph}
+A knowledge graph $G = (V_G,E_G)$ is a labeled directed graph with vertices $V_G$ and edges $E_G$. The set of all possible knowledge graphs is defined to be $\mathbf{G}$
+\end{Def}
+
+By encoding structured information in the knowledge graph, the labeled edges give the entities in the knowledge graph a meaning. That is, a labeled edge can be seen as a sentence consisting of a subject (the entity), the predicate (the label of the edge), and the object (the literal or another entity). Multiple sentences (or triples in the RDF graph) about an entity sets it in a semantic context, giving it a meaning.

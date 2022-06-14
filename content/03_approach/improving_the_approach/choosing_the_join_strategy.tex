@@ -1,0 +1,139 @@
+In the complexity analysis of the \textbf{evaluateConstraints} function in algorithm \ref{algo:validation_engine}, it is assumed that all the validation results fit into the main memory and, therefore, a hash table can be used to access the SHACL validation results in one step. However, this might not be the case, when a large dataset with many seed nodes combined with various constraints should be handled. 
+
+This problem can be tackled by taking the different components involved as relations in a relational schema, which in turn allows using appropriate physical operators known from relational databases. First, there is the sample-to-node mapping $\eta$ and the dataset $D$ retrieved from a knowledge graph $G$. These two can be handled as one relation $T$(\underline{idx}, node\_id, x, y). Each entity of $T$ represents a sample $(\mathbf{x_i},y_i)$ in $D$ with the corresponding node\_id $\eta(i)$, identified by an index $i$ ($i \in [1,...,N]$ and $N$ the number of samples in $D$). Next, each SHACL validation corresponding to a constraint $C_j \in \mathcal{C}$ of a schema $\mathcal{S}_j$ with target shape $ts_{j,k}$ yields a relation $S_{j,k}$(\underline{node\_id}, $\textrm{result}_{j,k}$), where $j \in [1,...,m]$; $k \in [1,...,|\mathcal{S}_j.S|]$) and $m = |\mathcal{C}|$ the number of constraints. The entities of $S_{j,k}$ represent the SHACL validation results \textit{validate}(node\_id, $ts_{j,k}$, $G$) for each seed node identified by a $\textrm{node\_id} \in [[\mathcal{S}_j.\uri{TARG}(ts_{j,k})]]_G$.
+
+During the evaluation of the constraints for each sample in the dataset, the SHACL validation results are needed, which expresses the need for the relations joined with respect to the seed nodes respectively the node identifiers. While performing the join, special attention to the $S_{j,k}$ relations is required as there will be node identifiers without a SHACL validation result for some $j,k$ as only nodes in the corresponding target definition of the target shape are handled. Therefore, outer-joins must be used to retain all dataset indices and validation results. Restricting the selection of query execution trees to left-deep trees yields two different join strategies, which are depicted in Figure \ref{fig:join_strategies_left_deep}.
+
+\begin{figure*}
+    \centering
+    \begin{subfigure}[b]{0.4\textwidth}
+            \centering
+            \begin{tikzpicture}[
+            style = {sibling distance = 2cm, semithick}]
+            \node (t1) [draw,ellipse]{$\rightouterjoin$}
+                child {node (t2) [draw, ellipse, solid, semithick] {$\fullouterjoin$} edge from parent [solid, semithick, double]
+                    child {node (t3) [draw, ellipse, solid, semithick] {$\fullouterjoin$} edge from parent [loosely dotted, very thick, double]
+                        child {node (t4) [draw, ellipse, solid, semithick] {$\fullouterjoin$} edge from parent [solid, semithick, double]
+                            child {node [draw,solid,semithick] {$S_{j_1,k_1}$} edge from parent [solid,semithick]}
+                            child {node [draw,solid,semithick] {$S_{j_2,k_2}$} edge from parent [solid,semithick]}
+                        }
+                        child {node [draw, solid, semithick] {$S_{j_{3},k_{3}}$} edge from parent [solid, semithick]} 
+                    }
+                    child {node [draw, solid, semithick] {$S_{j_{n},k_{m}}$} edge from parent [solid, semithick]} 
+                }
+            child {node [draw, solid, semithick] {$T$} edge from parent [solid, semithick]};
+            \node[left=0.3cm of t1] {$\tau_m$};
+            \node[left=0.3cm of t2] {$\tau_{m-1}$};
+            \node[left=0.3cm of t3] {$\tau_2$};
+            \node[left=0.3cm of t4] {$\tau_1$};
+            \end{tikzpicture}    
+            \caption{Join T at the end}
+            \label{fig:join_strategies_left_deep1}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.4\textwidth}
+            \centering
+            \begin{tikzpicture}[
+            style = {sibling distance = 2cm, semithick}]
+            \node (t1)[draw,ellipse]{$\leftouterjoin$}
+                child {node (t2) [draw, ellipse] {$\leftouterjoin$} edge from parent [loosely dotted, very thick, double]
+                    child {node (t3) [draw, ellipse, solid, semithick] {$\leftouterjoin$} edge from parent [solid, semithick, double]
+                        child {node [draw, solid, semithick] {$T$} edge from parent [solid, semithick]}
+                        child {node [draw, solid, semithick] {$S_{j_1,k_1}$} edge from parent [solid, semithick]}
+                    }
+                    child {node [draw, solid, semithick] {$S_{j_2,k_2}$} edge from parent [solid, semithick]} 
+                }
+                child {node [draw, solid, semithick] {$S_{j_{n},k_{m}}$} edge from parent [solid, semithick]
+            };
+            \node[left=0.3cm of t1] {$\tau_m$};
+            \node[left=0.3cm of t2] {$\tau_2$};
+            \node[left=0.3cm of t3] {$\tau_1$};
+            \end{tikzpicture}
+            \caption{Join T at the beginning}
+            \label{fig:join_strategies_left_deep2}
+    \end{subfigure}
+    \caption{Execution Trees with Intermediate Results $\tau$ and Double Lines Denoting Pipelining}
+    \label{fig:join_strategies_left_deep}
+\end{figure*}
+
+In the present context, applying the reductions from section \ref{section_shaclapi} when possible, it can be seen that the following equations hold:
+\begin{gather}
+    |T| = |[[Q_D]]_G| = |D| \label{eq:size_t}\\
+    |S_{j,k}| = |[[\mathcal{S}_j.\uri{TARG}(ts_{j,k})]]_G| \label{eq:size_s}\\
+    |\tau \fullouterjoin S_{j,k}| = |\pi_{\textrm{node\_id}}(\tau) \cup \pi_{\textrm{node\_id}}(S_{j,k})| \geq |S_{j,k}|, |\tau| \label{eq:join_s}\\
+    |T \leftouterjoin \tau| = |\tau \rightouterjoin T| = |T| \geq |\tau| \label{eq:join_t}
+\end{gather}
+where $\tau$ denotes an arbitrary intermediate result occurring in the execution trees. 
+
+Formula \ref{eq:join_t} is conceptually more involved, that is why it is proved below:
+\begin{proof}
+Each part of the equation can be proved on its own:
+
+\textbf{1.)} $|T \leftouterjoin \tau| = |\tau \rightouterjoin T|$ is true for all possible relations $T$ and $\tau$ because of symmetry.
+
+\textbf{2.)} $|\tau \rightouterjoin T| = |T|$ is proved by reasoning over $\tau_j$ ($l \in [1,...,m]$) given the execution trees in Figure \ref{fig:join_strategies_left_deep}. 
+
+In case of Figure \ref{fig:join_strategies_left_deep1}, it is $\tau_1 = (S_{j_1,k_1} \fullouterjoin S_{j_2,k_2})$ and $\tau_l = (\tau_{l-1} \fullouterjoin S_{j_{(l+1)},k_{(l+1)}})$. We note that for each $S_{j,k}$ the \textrm{node\_id} is unique. Therefore the \textrm{node\_id} will be unique for all $l$ in $\tau_l$. $T$ contains all $node\_id$'s which can occure at least once (see lemma \ref{S:removeTargets}); implying $\forall l ~ \pi_{\textrm{node\_id}}(\tau_l) \subseteq \pi_{\textrm{node\_id}}(T)$. This is sufficient for $\forall l ~ |\tau_l \rightouterjoin T| = |T|$ to be true in case of Figure \ref{fig:join_strategies_left_deep1}.
+
+In case of Figure \ref{fig:join_strategies_left_deep2}, it is $\tau_1 = (T \leftouterjoin \mathcal{S}_{j_1,k_1})$ and $\tau_l = (\tau_{l-1} \leftouterjoin S_{j_l,k_l})$. With the argumentation as above we can see that $\forall l ~ \pi_{\textrm{node\_id}}(\mathcal{S}_{j_l,k_l}) \subseteq \pi_{\textrm{node\_id}}(T)$. Clearly $\pi_{\textrm{node\_id}}(\tau_1) = \pi_{\textrm{node\_id}}(T)$ applies and $\forall l ~ \pi_{\textrm{node\_id}}(\tau_l) = \pi_{\textrm{node\_id}}(T)$ follows by induction over $l$. Again, this is sufficient for $\forall l ~ |\tau_l \rightouterjoin T| = |T|$ to be true in case of Figure \ref{fig:join_strategies_left_deep2}.
+
+\textbf{3.)} $|T| \geq |\tau|$ can be proved with the same arguments as $\textbf{2.)}$.
+\end{proof}
+
+Equations \ref{eq:size_t} and \ref{eq:size_s} put the cardinality of the relations in the context of the validation engine. That is, the cardinality of $T$ is equal to the cardinality of the dataset retrieved from the given knowledge graph and the cardinality of $S_{j,k}$ is equal to the number of nodes included in the target definition of $ts_{j,k}$.
+
+Next, both execution plans in Figure \ref{fig:join_strategies_left_deep} are analyzed separately using the cost model in Table \ref{fig:physical_operators_join} with respect to the order in which the $S_{j,k}$ relations are best joined and which execution plan should be chosen.
+
+\begin{table}
+    \centering
+    \begin{tabular}{p{3cm}|p{5cm}|p{5cm}}
+        \toprule
+        physical operator for $R \substack{\bowtie\\A=B} S$ & requirements & read cost\\
+        \midrule
+        \midrule
+        Index join & Index on $B$ in $S$ and $B$ is unique in $S$ & $|R| + |R| (k + log(\#(B,S)))$ where $k$ denotes the average number of $B$ matches in $S$ given the $A$ values from $R$.\tablefootnote{$\#(B,S)$ denotes the number of different $B$ values in $S$}\\
+        Sort join & $R$ and $S$ are sorted w.r.t A resp. B & $|R| + |S|$\\
+        Hash join & Requires $S$ to match into memory, in one or vertical partitioned & $|R| + |S|$\\
+        \bottomrule
+    \end{tabular}
+    \caption{Simplified Cost Model for Different Physical Join Operators}
+    \label{fig:physical_operators_join}
+\end{table}
+
+\paragraph{a) Join T at the end} With the equations \ref{eq:join_s} and \ref{eq:join_t} it follows that during the execution of the operation tree the intermediate results are increasing monotonously up to $|T|$. 
+
+In case of the index join, the cost can be approximated to be:
+\begin{align*}
+    & \underbrace{|\tau_{m-1}| + |\tau_{m-1}| * \left(\frac{|T|}{\#(\textrm{node\_id}, T)} + log(\#(\textrm{node\_id}, T))\right)}_{\textrm{read cost $\rightouterjoin$}}\\  
+    & + \underbrace{\sum_{i=0}^{m-2} \left[ |\tau_i| * (2 + log(\#(\textrm{node\_id}, S_{j_{i+2},k_{i+2}}))\right]}_{\textrm{read cost $\fullouterjoin$}} + \underbrace{|\tau_m| - \sum_{i=1}^{m-1} \left[|\tau_i|\right]}_\textrm{write cost - pipelining}\\
+    &= |\tau_{m-1}| * \left(\frac{|T|}{|[[Q_s]]_G|} + log(|[[Q_s]]_G|)\right) + \sum_{i=0}^{m-2} \left[ |\tau_i| * (1 + log(|S_{j_{i+2},k_{i+2}}|))\right] + |T| + |\tau_0|
+\end{align*}
+where $\tau_0 = S_{j_{1},k_{1}}$, $|\tau_m| = |T|$, and the node\_ids are unique for all $S_{j,k}$ and in each $\tau_i$. Therefore, to simplify the calculation, the $k$ in the formula for the read cost of the index join is set to $1$, when joining with a $S$. In the join with, $T$ it is used that the node\_ids in $T$ correspond to the seed nodes in the sample-to-node mapping, which can be retrieved with the $Q_s$ generated with equation \ref{seed_query_from_dataset_generating_query}.
+
+In case of the sort or the hash join, the cost can be approximated to be:
+\begin{align*}
+    & \underbrace{(|\tau_m-1| + |T|) + \sum_{i=0}^{m-2} \left[|\tau_i| + |S_{j_{i+2},k_{i+2}}|\right]}_{\textrm{read cost}} + \underbrace{\sum_{i=1}^{m} \left[|\tau_i|\right]}_\textrm{write cost}
+\end{align*}
+where $\tau_0 = S_{j_{1},k_{1}}$ and $|\tau_m| = |T|$.
+However, these types of joins do not support pipelining as the final result is written multiple times until the final result is ready. The sort join comes with the additional requirement of sorted input relations, adding a cost in the order of $O(m * |T|*log(|T|))$.
+
+Therefore, considering the cost complexity of the physical join operators, the following heuristic to minimize the cost arises:
+
+\begin{Satz}{Join-Heuristic 1}{join_heuristic1}
+When joining $T$ at the end, the $j_1,...,j_m$ and $k_1,...,k_m$ in Figure \ref{fig:join_strategies_left_deep1} should be chosen such that the cardinality of the intermediate results $\tau_1,...,\tau_{m-1}$ are as small as possible.
+\end{Satz}
+
+One might think about converting the left-deep execution tree into a right-deep execution tree to reduce the cost\footnote{Assuming $|\tau_i| > |S_{j_{i+2},k_{i+2}}|$ for enough $i$'s} to:
+\begin{multline*}
+    \underbrace{|T| * (2 + log(\#(\textrm{node\_id}, \tau_{m-1}))) + \sum_{i=0}^{m-2} \left[ |S_{j_{i+2},k_{i+2}}| * (2 + log(\#(\textrm{node\_id}, \tau_i))\right]}_{\textrm{read cost}} \\
+    + \underbrace{|\tau_m| - \sum_{i=1}^{m-1} \left[|\tau_i|\right]}_\textrm{write cost - pipelining}
+\end{multline*}
+where the $k$ in the index join is again set to $1$, assuming the maximal number of matches, when joining with an intermediate result $\tau_i$.
+However, this involves maintaining the index structure of the intermediate results. Assuming a b-tree is used for indexing, this would yield an additional cost in the size of $O(|T| * log(|T|))$, which might lead to a worse execution time.
+
+\paragraph{b) Join T at the beginning} The execution plan leads to a constant cardinality of the intermediate results of $|T|$ right from the beginning (see \ref{eq:join_t}).
+Therefore, the cost calculation will be analog to the last paragraph but with the difference that all $|\tau_i|$ are as worse as possible, i.e., $|T|$. Further, an index structure over the node\_ids in $T$ will be useful as it can be used in every step of the execution plan. 
+On the good side, it allows joining the SHACL validation results incrementally with $T$ and, therefore, interleaving the join and the SHACL validation will yield usable results right after the first SHACL schema is validated, and the results are joined.
+
+\begin{Satz}{Join-Heuristic 2}{join_heuristic2}
+$T$ should be joined in the end or as early as intermediate SHACL validation results in combination with the dataset indices are needed.
+\end{Satz}
