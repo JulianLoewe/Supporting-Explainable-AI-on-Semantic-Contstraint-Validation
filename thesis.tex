@@ -1,10 +1,8 @@
 \documentclass[11pt,a4paper, DIV=12]{report}
 \input{preamble}
-\usepackage{mdframed}
-\usepackage{subfiles}
 
 \begin{document}
-\subfile{titlepage}
+\input{titlepage}
 \cleardoublepage
 
 \input{declaration.tex}
@@ -22,143 +20,143 @@ On the other hand, an increasing usage of AI models in productive systems comes 
 
 \chapter{Introduction}
     \label{section_introduction}
-    \subfile{content/01_introduction/introduction}
+    \input{content/01_introduction/introduction}
     \section{Motivating Example}
-        \subfile{content/01_introduction/motivating_example}
+        \input{content/01_introduction/motivating_example}
     \section{Contributions}
-        \subfile{content/01_introduction/contributions}
+        \input{content/01_introduction/contributions}
     \section{Document Structure}
-        \subfile{content/01_introduction/document_structure}
+        \input{content/01_introduction/document_structure}
     \section{Summary}
-        \subfile{content/01_introduction/summary}
+        \input{content/01_introduction/summary}
 
 \chapter{Background}
     \label{section_background}
-    \subfile{content/02_background/introduction}
+    \input{content/02_background/introduction}
     \section{Preliminaries}
-        \subfile{content/02_background/preliminaries}
+        \input{content/02_background/preliminaries}
     \section{Semantic Constraint Validation}
-        \subfile{content/02_background/semantic_constraint_validation/introduction}
+        \input{content/02_background/semantic_constraint_validation/introduction}
         \subsection{RDF - Encoding Structured Information}
             \label{background_rdf}
-            \subfile{content/02_background/semantic_constraint_validation/rdf}
+            \input{content/02_background/semantic_constraint_validation/rdf}
         %   - URIs/IRIs ✅ , Literals ✅ ,
         %   - RDF - Triples ✅ 
         \subsection{An Example RDF Graph using Turtle}
             \label{background_turtle}
-            \subfile{content/02_background/semantic_constraint_validation/turtle}
+            \input{content/02_background/semantic_constraint_validation/turtle}
         %   - Turtle ✅ 
         %   - N-Triples ✅ 
 
         \subsection{Querying RDF Graphs with SPARQL}
             \label{background_sparql}
-            \subfile{content/02_background/semantic_constraint_validation/sparql}
+            \input{content/02_background/semantic_constraint_validation/sparql}
         %   - SPARQL ✅ 
         %   - Basic Graph Patterns ✅ 
 
         \subsection{Validating SHACL Constraints over an SPARQL Endpoint}
             \label{background_shacl}
-            \subfile{content/02_background/semantic_constraint_validation/shacl}
+            \input{content/02_background/semantic_constraint_validation/shacl}
         %   - SHACL Basics e.g. Shapes --> Node and Property Shapes ✅ 
         %   - Validation Knowledge Graph Formalism as Basis to abstract on later ✅ 
         %   - Property Paths ✅ 
 
     \section{Explainable AI}
-    \subfile{content/02_background/explainable_ai/introduction}
+        \input{content/02_background/explainable_ai/introduction}
     \label{background_explainable_ai}
         \subsection{Basics of Machine Learning}
-            \subfile{content/02_background/explainable_ai/ml_basics}
+            \input{content/02_background/explainable_ai/ml_basics}
         % - Task --> Dataset, Model, Inducer, Parameters  ✅ 
         % - Categorical, Continuous Variables --> Regression and Classification ✅ 
         \subsection{Learning Algorithms and Performance Measures}
             \label{section_algorithms_performance_measures}
-            \subfile{content/02_background/explainable_ai/learning_algorithms_and_metrics}
+            \input{content/02_background/explainable_ai/learning_algorithms_and_metrics}
         % - Assumptions made by a Model (Inductive Bias) --> Allows generalization ✅ 
         % - Bias - Variance Tradeoff ✅  -> Overfitting/Underfitting 
         % - Train/Validation/Test Split ✅  --> Cross Validation
         % - Loss/Error and Metrics ✅ 
         \subsection{Tree-based Models}
             \label{section_tree_based_models}
-            \subfile{content/02_background/explainable_ai/tree_based_models}
+            \input{content/02_background/explainable_ai/tree_based_models}
         %\paragraph{CART}        
         %\paragraph{Random Forests}
         %\paragraph{Gradient Boosting}
         %  - Decision Trees and a basic Algorithm to be extended later
         %  - Further Models using Decision Trees like Random Forests, Gradient Boosting    
     \section{Summary}
-        \subfile{content/02_background/summary}
+        \input{content/02_background/summary}
 
 \chapter{Related Work}
     \label{section_related_work}
-    \subfile{content/related_work}
+    \input{content/related_work}
 
 \chapter{Approach}
     \label{section_approach}   
-    \subfile{content/03_approach/introduction}
+    \input{content/03_approach/introduction}
     
     \section{Problem Definition}
         \label{section_problem_definition}
-        \subfile{content/03_approach/problem_definition}
+        \input{content/03_approach/problem_definition}
 
     \section{Validating Constraints over Machine Learning Models}
         \label{section_validating_constraints}
-        \subfile{content/03_approach/validating_constraints/introduction}
+        \input{content/03_approach/validating_constraints/introduction}
         
     
         \subsection{Prepositionalization}
             \label{section_propositionalization}
-            \subfile{content/03_approach/validating_constraints/propositionalization}
+            \input{content/03_approach/validating_constraints/propositionalization}
             
         \subsection{Constraint Evaluation}
             \label{section_evaluating_constraints}
-            \subfile{content/03_approach/validating_constraints/evaluating_constraints}
+            \input{content/03_approach/validating_constraints/evaluating_constraints}
         
         \subsection{The Validation Engine}
             \label{section_validation_engine}
-            \subfile{content/03_approach/validating_constraints/validation_engine}
+            \input{content/03_approach/validating_constraints/validation_engine}
         \subsection{Complexity}
             \label{section_validation_engine_complexity}
-            \subfile{content/03_approach/validating_constraints/complexity}
+            \input{content/03_approach/validating_constraints/complexity}
     
     \section{Improving and Extending the Approach}                          
         \label{section_improving_approach}
-        \subfile{content/03_approach/improving_the_approach/introduction}
+        \input{content/03_approach/improving_the_approach/introduction}
 
         \subsection{Reducing the SHACL Shape Schemas}
             \label{section_shaclapi}
-            \subfile{content/03_approach/improving_the_approach/shaclapi}
+            \input{content/03_approach/improving_the_approach/shaclapi}
         
         \subsection{How to Join the SHACL Validation Results with the Dataset}
             \label{section_executing_the_join}
-            \subfile{content/03_approach/improving_the_approach/choosing_the_join_strategy}
+            \input{content/03_approach/improving_the_approach/choosing_the_join_strategy}
         
         \subsection{Performing SHACL Constraint Validation during SPARQL Query Execution}
             \label{section_valSPARQL}
-            \subfile{content/03_approach/improving_the_approach/valsparql}
+            \input{content/03_approach/improving_the_approach/valsparql}
 
         \subsection{Different Types of Constraints}
             \label{section_further_types_of_constraints}
-            \subfile{content/03_approach/improving_the_approach/more_constraints}
+            \input{content/03_approach/improving_the_approach/more_constraints}
     
     \section{Constraint-based Explanations and Interpretations}
         \label{section_constraint_based_explanations}
-        \subfile{content/03_approach/explanations/introduction}
+        \input{content/03_approach/explanations/introduction}
         % --> short the problem to be approached: And why it needs to be approached ✅ 
         % --> What is the meaning of an explanation?
         % --> Give three valued logic a meaning --> Table ✅ 
         \subsection{Frequency Distribution Tables to Summarize and as a Basis for Visualizations}
-            \subfile{content/03_approach/explanations/frequency_distribution_tables}
+            \input{content/03_approach/explanations/frequency_distribution_tables}
             \label{section_frequency_distribution_tables}
             % --> Motivation to count --> From Counts to frequency distributions ✅ 
             % --> Frequency distribution and Pie Charts ✅ 
             % ...
 
         \subsection{Decomposing the Confusion Matrix}    
-            \subfile{content/03_approach/explanations/confusion_matrix}
+            \input{content/03_approach/explanations/confusion_matrix}
             \label{section_confusion_matrix_decomposition}
 
         \subsection{Visualizing the Model Validation Results Given Multiple Constraints}
-            \subfile{content/03_approach/explanations/multiple_constraints}
+            \input{content/03_approach/explanations/multiple_constraints}
             \label{section_visualizing_multiple_constraint_validation_results}
             % -> Neue Constraints: Males should not be vaccinated and Females should be vaccinated in general. ✅ 
             % -> Multiple Constraints and Grouped Stacked Histograms (Alle Daten, Alle Constraints, Gruppierung aber keine Korrelation in den Gruppen) ✅ 
@@ -166,12 +164,12 @@ On the other hand, an increasing usage of AI models in productive systems comes 
             % -> Coverage mit Histogram (Alle Daten, Alle Constraints, Gruppierung, Korrelation)
             
         \subsection{Supporting the Explainability of Decision Trees}
-            \subfile{content/03_approach/explanations/decision_trees}
+            \input{content/03_approach/explanations/decision_trees}
             \label{section_constraint_decision_tree_visualization}
             % Decision Trees
             % - Zuordnung: Validation Results <-> Nodes
     \section{Summary}
-        \subfile{content/03_approach/summary}
+        \input{content/03_approach/summary}
     
     % \section{Constraint-based Model Selection}
         % -> How to measure accuracy? Weighted Mean between Validation Result and Performance Measure?
@@ -194,38 +192,38 @@ On the other hand, an increasing usage of AI models in productive systems comes 
 
 \chapter{Implementation}
     \label{section_implemenation}
-    \subfile{content/04_implementation/introduction}
+    \input{content/04_implementation/introduction}
     \section{Design, Structure and Dependencies}
         \label{section_design_structure_dependencies}
-        \subfile{content/04_implementation/design_structure}
+        \input{content/04_implementation/design_structure}
     \section{Performance Efficiency}
         \label{section_performance_efficiency}
-        \subfile{content/04_implementation/performance_efficiency}
+        \input{content/04_implementation/performance_efficiency}
     \section{Portability and Maintainability}
         \label{section_portability_maintainability}
-        \subfile{content/04_implementation/portability_maintainability}
+        \input{content/04_implementation/portability_maintainability}
     \section{Summary}
-        \subfile{content/04_implementation/summary}
+        \input{content/04_implementation/summary}
 
 \chapter{Application: InterpretME}
-    \subfile{content/interpretme}
+    \input{content/interpretme}
     \label{section_interpretme}
 
 \chapter{Experimental Evaluation}
     \label{section_evaluation}
-    \subfile{content/05_evaluation/introduction}
+    \input{content/05_evaluation/introduction}
     \section{Validation Engine}
-        \subfile{content/05_evaluation/validation_engine}
+        \input{content/05_evaluation/validation_engine}
         \label{section_evaluation_validation_engine}
     \section{Visualization Algorithm}
-        \subfile{content/05_evaluation/visualization_algo}
+        \input{content/05_evaluation/visualization_algo}
         \label{section_evaluation_visualization_algorithm}
     \section{Summary: Real Data Application}
-        \subfile{content/05_evaluation/real_data_application}
+        \input{content/05_evaluation/real_data_application}
         \label{section_evaluation_summary}
 \chapter{Conclusions and Future Work}
     \label{section_conclusions}
-    \subfile{content/conclusion}
+    \input{content/conclusion}
 
 \listoffigures
 \listoftables

@@ -1,5 +1,4 @@
-\documentclass[../../../thesis]{subfiles}
-\begin{document}
+
 Machine learning aims at providing algorithms that enable computers to learn from data. A good definition of learning in this context is given by Mitchell \cite{mitchell1997machine}, who states that learning from experience E with respect to some class of tasks T and performance measure P is to perform better at T (as measured by P) with more experience E.
 As this definition of learning lies in the heart of machine learning, the short introduction is structured based on it.
 Usually, machine learning is applied for tasks where the direct design of an algorithm is too difficult or where it is not even known how the task can be solved. In analogy to a functional algorithm, which gets an input and produces an output, a machine learning algorithm produces a machine learning model, which can then transform an input into an output. Therefore, a task is to transform an input into an output according to a specific eventually unknown schema $ot(.)$. \cite{bengio2017deep}
@@ -31,4 +30,3 @@ The machine learning algorithm discussed above to produce a machine learning mod
 Given a task $(\mathbb{I}, \mathbb{T}, ot(.))$, a machine learning algorithm is a function $\mathcal{I_\zeta}: (\mathbb{I} \times \mathbb{T})^N \mapsto \mathbb{F}_{\mathcal{I_\zeta}}$. $\mathcal{I_\zeta}$ is called inducer with hyperparameters $\zeta$ and the hypothesis space, $\mathbb{F}_{\mathcal{I_\zeta}} \subset \mathcal{P}(\mathbb{I} \times \mathbb{T})$ which is the space of functions, which the produced machine learning model can represent.
 \end{Def}
 Hyperparameters are the parameters used to configure the inducer. Typical examples of hyperparameters are the learning rate and the maximum depth of a decision tree.
-\end{document}
